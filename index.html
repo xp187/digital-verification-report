@@ -362,6 +362,14 @@
         { id: "register-function", label: "Register Function" },
         { id: "unlock", label: "Unlock" }
       ];
+      // Static records need their classifications because GitHub Pages has no local browser data.
+      const publishedSeedTags = {
+        "case-a": ["io"],
+        "case-b": ["io"],
+        "hk1v11-t-8b1lane-eol-test12-0": ["io"],
+        "hk1v11-t-8b1lane-eol-test12-1": ["io"],
+        "hk1v11-t-h3840-v16-fps120-dpolinv1": ["register-function"]
+      };
       const initialWave = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520">
           <rect width="1000" height="520" fill="#07121b"/>
@@ -532,10 +540,13 @@
           annotations: item.annotations || []
         }] : [];
         const sourceEvidences = Array.isArray(item.evidences) ? item.evidences : legacyEvidence;
+        const sourceTags = Array.isArray(item.tags) && item.tags.length
+          ? item.tags
+          : (publishedSeedTags[item.id] || (item.name.includes("_unlock_") ? ["unlock"] : []));
         return {
           ...item,
           project: allowedProjects.includes(item.project) ? item.project : "HK1V11",
-          tags: Array.from(new Set((Array.isArray(item.tags) ? item.tags : []).filter(tag => caseTags.some(option => option.id === tag)))),
+          tags: Array.from(new Set(sourceTags.filter(tag => caseTags.some(option => option.id === tag)))),
           updated: normalizeUpdated(item.updated),
           evidences: sourceEvidences.map(normalizeEvidence)
         };
