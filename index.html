@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>数字验证报告</title>
+  <style>
+    :root {
+      --page: #eef2f6;
+      --panel: #ffffff;
+      --panel-muted: #f6f8fb;
+      --line: #dce4ed;
+      --ink: #172033;
+      --muted: #68758a;
+      --blue: #1479c9;
+      --blue-soft: #e2f1fd;
+      --blue-deep: #075fa6;
+      --category: #247d78;
+      --category-soft: #e5f4f2;
+      --category-deep: #17615d;
+      --green: #13875e;
+      --green-soft: #d9f7e8;
+      --amber: #b96a00;
+      --amber-soft: #fff1d7;
+      --red: #c63d4b;
+      --red-soft: #ffe5e8;
+      --shadow: 0 12px 32px rgba(31, 53, 78, .08);
+      --radius: 8px;
+      --mono: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: "Segoe UI", "Microsoft YaHei UI", Arial, sans-serif;
+    }
+
+    :root[data-theme="dark"] {
+      --page: #111927;
+      --panel: #182232;
+      --panel-muted: #202d40;
+      --line: #34445b;
+      --ink: #edf4ff;
+      --muted: #a6b6ca;
+      --blue: #51b3ff;
+      --blue-soft: #153c5e;
+      --blue-deep: #91d0ff;
+      --category: #63d2c8;
+      --category-soft: #173f40;
+      --category-deep: #9ce9e2;
+      --green: #5cddb0;
+      --green-soft: #164a3c;
+      --amber: #ffc36b;
+      --amber-soft: #5e4217;
+      --red: #ff8995;
+      --red-soft: #5b2832;
+      --shadow: 0 12px 32px rgba(0, 0, 0, .22);
+    }
+
+    * { box-sizing: border-box; }
+    html { min-width: 320px; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--page);
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [contenteditable="true"]:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--blue) 38%, transparent);
+      outline-offset: 2px;
+    }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 276px minmax(0, 1fr); }
+    .sidebar { background: var(--panel); border-right: 1px solid var(--line); padding: 26px 16px; position: sticky; top: 0; height: 100vh; overflow: auto; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 23px; border-bottom: 1px solid var(--line); }
+    .brand-mark { width: 34px; height: 34px; border-radius: 7px; background: var(--blue); color: white; display: grid; place-items: center; font-family: var(--mono); font-size: 13px; font-weight: 800; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+    .brand strong { display: block; font-size: 16px; letter-spacing: 0; }
+    .brand span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .side-action { width: 100%; margin: 18px 0 21px; background: var(--blue); color: #fff; border: 0; border-radius: 6px; padding: 11px 12px; font-weight: 700; text-align: left; }
+    .side-action:hover { background: var(--blue-deep); }
+    .side-title { padding: 0 10px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .nav-list { padding: 7px 0 20px; }
+    .nav-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 0; background: transparent; color: var(--ink); border-radius: 5px; text-align: left; font-size: 13px; }
+    .nav-item:hover { background: var(--panel-muted); }
+    .nav-item.active { background: var(--blue-soft); color: var(--blue-deep); font-weight: 700; }
+    .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex: 0 0 auto; }
+    .nav-item.active .nav-dot { background: var(--blue); }
+    .nav-group-title { margin: 15px 0 5px; padding: 7px 10px 7px 12px; border-left: 3px solid var(--category); border-radius: 0 5px 5px 0; background: var(--category-soft); color: var(--category-deep); font: 800 11px var(--mono); letter-spacing: .09em; text-transform: uppercase; }
+    .nav-group-title + .nav-item { margin-top: 1px; }
+    .nav-sub { color: var(--muted); padding: 7px 10px 2px 28px; font: 12px/1.45 var(--mono); overflow-wrap: anywhere; }
+    .side-foot { border-top: 1px solid var(--line); padding: 16px 10px 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .workspace { min-width: 0; }
+    .topbar { min-height: 78px; padding: 15px 34px; background: color-mix(in srgb, var(--panel) 92%, transparent); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px; position: sticky; z-index: 20; top: 0; backdrop-filter: blur(12px); }
+    .day-title { min-width: 260px; }
+    .eyebrow { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { font-size: 19px; margin: 3px 0 0; letter-spacing: 0; }
+    .search { flex: 1; max-width: 460px; position: relative; }
+    .search input { width: 100%; border: 1px solid var(--line); background: var(--panel-muted); color: var(--ink); border-radius: 6px; height: 38px; padding: 0 13px 0 36px; }
+    .search::before { content: "⌕"; position: absolute; left: 13px; top: 7px; color: var(--muted); font-size: 20px; }
+    .toolbar { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .tool-button { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; font-size: 13px; font-weight: 650; }
+    .tool-button:hover { background: var(--panel-muted); }
+    .tool-button.icon { width: 38px; padding: 0; font-size: 18px; }
+    .project-filter { min-height: 38px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 6px; padding: 0 30px 0 10px; font-size: 13px; font-weight: 700; }
+    .content { width: min(100%, 1180px); padding: 30px 34px 70px; }
+    .print-heading { display: none; }
+    .print-toc { display: none; }
+    .summary-strip { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .summary-item { min-height: 76px; border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 3px 12px rgba(20, 38, 60, .03); }
+    .summary-label { color: var(--muted); font-size: 12px; }
+    .summary-value { display: block; margin-top: 5px; font: 700 18px var(--mono); }
+    .summary-value.blue { color: var(--blue); }
+    .summary-value.green { color: var(--green); }
+    .case-list { display: grid; gap: 18px; }
+    .case-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: clip; scroll-margin-top: 98px; }
+    .case-card.is-hidden { display: none; }
+    .case-head { padding: 19px 24px 14px; display: flex; gap: 18px; align-items: flex-start; border-bottom: 1px solid var(--line); }
+    .case-identity { min-width: 0; flex: 1; }
+    .case-name { font: 700 15px/1.4 var(--mono); color: var(--ink); padding: 2px 0; border-bottom: 1px dashed transparent; overflow-wrap: anywhere; }
+    .case-name:focus { border-color: var(--blue); outline: none; }
+    .case-meta { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 12px; }
+    .case-meta code { color: var(--blue-deep); font-family: var(--mono); }
+    .case-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .case-tag { display: inline-flex; align-items: center; min-height: 23px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line)); border-radius: 999px; background: var(--blue-soft); color: var(--blue-deep); font: 700 11px var(--mono); }
+    .case-tag.uncategorized { border-color: var(--line); background: var(--panel-muted); color: var(--muted); }
+    .case-actions { display: flex; align-items: center; gap: 8px; }
+    .tag { border: 0; border-radius: 999px; padding: 7px 10px; font-size: 12px; font-weight: 800; }
+    .tag.project { color: var(--blue-deep); background: var(--blue-soft); }
+    .status-badge { border-radius: 999px; padding: 7px 11px; background: var(--green-soft); color: var(--green); font-size: 12px; font-weight: 800; }
+    .status-badge.run { background: var(--amber-soft); color: var(--amber); }
+    .status-badge.fail, .status-badge.blocked { background: var(--red-soft); color: var(--red); }
+    .project-select { border: 1px solid color-mix(in srgb, var(--blue) 35%, var(--line)); border-radius: 999px; padding: 6px 30px 6px 10px; background: var(--blue-soft); color: var(--blue-deep); font-size: 12px; font-weight: 800; }
+    .tag-picker { position: relative; }
+    .tag-picker summary { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); cursor: pointer; font: 800 12px var(--mono); list-style: none; }
+    .tag-picker summary::-webkit-details-marker { display: none; }
+    .tag-picker[open] summary { border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); color: var(--blue-deep); background: var(--blue-soft); }
+    .tag-picker-menu { position: absolute; z-index: 8; top: calc(100% + 7px); right: 0; width: 194px; padding: 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); box-shadow: var(--shadow); }
+    .tag-picker-option { display: flex; align-items: center; gap: 8px; min-height: 31px; padding: 0 7px; border-radius: 4px; color: var(--ink); cursor: pointer; font: 700 12px var(--mono); }
+    .tag-picker-option:hover { background: var(--panel-muted); }
+    .tag-picker-option input { accent-color: var(--blue); }
+    .status-select { border: 0; border-radius: 999px; padding: 7px 28px 7px 11px; font-weight: 800; appearance: none; background: var(--green-soft); color: var(--green); text-align: center; }
+    .status-select.run { background: var(--amber-soft); color: var(--amber); }
+    .status-select.fail, .status-select.blocked { background: var(--red-soft); color: var(--red); }
+    .delete-case { color: var(--muted); border: 0; background: transparent; font-size: 20px; height: 30px; width: 30px; border-radius: 5px; }
+    .delete-case:hover { color: var(--red); background: var(--red-soft); }
+    .case-body { padding: 19px 24px 25px; }
+    .detail-grid { display: grid; grid-template-columns: 155px minmax(0, 1fr); gap: 0 18px; }
+    .detail-label { color: var(--blue-deep); padding: 12px 0; font-weight: 800; font-size: 13px; }
+    .editable-text { min-height: 45px; padding: 10px 0; border-bottom: 1px dashed var(--line); line-height: 1.65; font-size: 14px; white-space: pre-wrap; }
+    .editable-text:focus { border-bottom-color: var(--blue); outline: none; }
+    .evidence-block { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .evidence-head { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .evidence-head h2 { margin: 0; font-size: 14px; }
+    .evidence-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .evidence-list { display: grid; gap: 20px; min-width: 0; }
+    .waveform-item { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel); }
+    .waveform-head { min-height: 42px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--panel-muted); border-bottom: 1px solid var(--line); }
+    .waveform-title { flex: 1; min-width: 0; font-size: 12px; font-weight: 800; color: var(--blue-deep); }
+    .waveform-title span { color: var(--muted); font-family: var(--mono); font-weight: 500; margin-left: 8px; overflow-wrap: anywhere; }
+    .delete-waveform { min-height: 30px; border: 1px solid transparent; border-radius: 5px; padding: 0 8px; background: transparent; color: var(--red); font-size: 12px; font-weight: 700; }
+    .delete-waveform:hover { border-color: color-mix(in srgb, var(--red) 30%, var(--line)); background: var(--red-soft); }
+    .image-board { position: relative; width: 100%; overflow: hidden; background: #07121b; border: 1px solid #253a4c; border-radius: 6px; aspect-ratio: 1000 / 520; user-select: none; touch-action: none; }
+    .wave-image { width: 100%; height: 100%; display: block; object-fit: contain; position: absolute; inset: 0; }
+    .annotation-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .annotation-layer.tool-arrow, .annotation-layer.tool-rect, .annotation-layer.tool-text { cursor: crosshair; }
+    .annotation-layer.tool-select { cursor: default; }
+    .annotation { cursor: default; }
+    .annotation.selected > :not(.annotation-handle) { filter: drop-shadow(0 0 3px #fff); }
+    .annotation text { font-family: var(--sans); font-weight: 700; paint-order: stroke; stroke: #172033; stroke-width: 6px; stroke-linejoin: round; }
+    .annotation .note-bg { fill: rgba(7, 18, 27, .82); stroke-width: 2; }
+    .annotation .mark-box { fill: rgba(56, 172, 255, .10); }
+    .annotation-handle { cursor: grab; fill: #fff; stroke: #172033; stroke-width: 3; vector-effect: non-scaling-stroke; }
+    .annotation-handle:active { cursor: grabbing; }
+    .annotation-toolbar { min-width: 0; display: flex; flex-wrap: wrap; gap: 7px; padding: 10px; background: var(--panel-muted); border: 1px solid var(--line); border-bottom: 0; border-radius: 6px 6px 0 0; }
+    .annotation-tool { min-height: 34px; display: inline-flex; gap: 7px; align-items: center; border: 1px solid transparent; border-radius: 5px; padding: 0 10px; background: transparent; color: var(--ink); font-size: 12px; font-weight: 700; }
+    .annotation-tool:hover { background: var(--panel); border-color: var(--line); }
+    .annotation-tool.active { background: var(--blue-soft); border-color: color-mix(in srgb, var(--blue) 35%, var(--line)); color: var(--blue-deep); }
+    .annotation-tool.danger { margin-left: auto; color: var(--red); }
+    .annotation-tool.danger:hover { background: var(--red-soft); border-color: color-mix(in srgb, var(--red) 30%, var(--line)); }
+    .annotation-tool:disabled { opacity: .45; cursor: not-allowed; }
+    .annotation-properties { display: flex; flex-wrap: wrap; align-items: center; gap: 9px 16px; padding: 9px 10px; border: 1px solid var(--line); border-top: 0; background: var(--panel); color: var(--muted); font-size: 12px; }
+    .annotation-properties label { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; }
+    .annotation-properties input[type="color"] { width: 30px; height: 28px; padding: 2px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+    .annotation-properties input[type="range"] { width: 120px; accent-color: var(--blue); }
+    .annotation-properties input[type="text"] { width: min(330px, 48vw); min-height: 30px; border: 1px solid var(--line); border-radius: 5px; padding: 0 8px; background: var(--panel-muted); color: var(--ink); }
+    .annotation-properties [hidden] { display: none !important; }
+    .property-status { margin-left: auto; font-family: var(--mono); color: var(--blue-deep); }
+    .evidence-caption { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .upload-line { margin-top: 13px; display: flex; gap: 9px; align-items: center; color: var(--muted); font-size: 12px; }
+    .upload-line label { display: inline-flex; align-items: center; min-height: 33px; padding: 0 10px; color: var(--blue-deep); font-weight: 800; background: var(--blue-soft); border-radius: 5px; cursor: pointer; }
+    .upload-line input { display: none; }
+    .waveform-item .annotation-toolbar { border-left: 0; border-right: 0; border-radius: 0; }
+    .waveform-item .annotation-properties { border-left: 0; border-right: 0; }
+    .waveform-item .image-board { border-left: 0; border-right: 0; border-radius: 0; }
+    .waveform-item .upload-line, .waveform-item .evidence-caption { margin-left: 10px; margin-right: 10px; }
+    .waveform-item .evidence-caption { margin-bottom: 10px; }
+    .add-waveform-line { margin-top: 14px; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; }
+    .add-waveform-line label { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 5px; background: var(--blue); color: #fff; font-weight: 800; cursor: pointer; }
+    .add-waveform-line label:hover { background: var(--blue-deep); }
+    .add-waveform-line input { display: none; }
+    .toast { position: fixed; z-index: 100; left: 50%; bottom: 24px; transform: translate(-50%, 12px); padding: 11px 15px; background: #172033; color: #fff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.24); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .empty { padding: 50px 20px; border: 1px dashed var(--line); background: var(--panel); border-radius: var(--radius); text-align: center; color: var(--muted); }
+    .empty strong { display: block; color: var(--ink); margin-bottom: 8px; }
+    @media (max-width: 900px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; padding: 14px 18px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .brand { padding-bottom: 12px; }
+      .side-action, .side-title, .nav-sub, .side-foot { display: none; }
+      .nav-list { padding: 10px 0 0; display: flex; gap: 6px; overflow: auto; }
+      .nav-item { width: auto; white-space: nowrap; padding: 8px 10px; }
+      .nav-group-title { display: none; }
+      .topbar { padding: 13px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+      .day-title { min-width: 0; grid-column: 1; }
+      .toolbar { grid-column: 2; margin-left: 0; }
+      .search { grid-column: 1 / -1; grid-row: 2; max-width: none; }
+      .case-head { flex-wrap: wrap; }
+      .case-actions { width: 100%; justify-content: flex-start; }
+      .content { padding: 20px 18px 46px; }
+      .summary-strip { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 620px) {
+      .topbar { grid-template-columns: 1fr; }
+      .day-title { grid-column: 1; }
+      .toolbar { grid-column: 1; grid-row: 2; width: 100%; }
+      .search { grid-column: 1; grid-row: 3; }
+      .toolbar .tool-button:not(.icon) { padding: 0 8px; font-size: 12px; }
+      .summary-strip { grid-template-columns: 1fr; }
+      .case-head { padding: 16px; gap: 10px; flex-wrap: wrap; }
+      .case-actions { width: 100%; justify-content: flex-start; }
+      .case-body { padding: 16px; }
+      .detail-grid { grid-template-columns: 1fr; gap: 0; }
+      .detail-label { padding: 12px 0 2px; }
+      .editable-text { padding: 6px 0 12px; }
+      .annotation-tool { padding: 0 8px; }
+      .annotation-tool.danger { margin-left: 0; }
+      .evidence-head .eyebrow { display: none; }
+      .annotation-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .annotation-tool { justify-content: center; min-width: 0; padding: 0 4px; }
+      .annotation-properties { align-items: flex-start; }
+      .property-status { width: 100%; margin-left: 0; }
+      .add-waveform-line { flex-wrap: wrap; }
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      :root { color-scheme: light; }
+      body { background: #fff; color: #172033; }
+      .app-shell { display: block; }
+      .sidebar, .topbar, .summary-strip, .annotation-toolbar, .annotation-properties, .upload-line, .add-waveform-line, .delete-case, .delete-waveform { display: none !important; }
+      .content { width: auto; padding: 0; }
+      .print-heading { display: block; padding: 0 0 6mm; border-bottom: 2px solid #172033; margin-bottom: 7mm; }
+      .print-heading h1 { font-size: 20px; }
+      .print-heading p { margin: 3px 0 0; color: #5c687b; font-size: 12px; }
+      .print-toc { display: block; padding-bottom: 8mm; break-after: page; }
+      .print-toc h2 { margin: 0 0 5mm; font-size: 16px; }
+      .print-toc-groups { columns: 2; column-gap: 10mm; }
+      .print-toc-group { break-inside: avoid; padding: 0 0 5mm; }
+      .print-toc-group h3 { margin: 0 0 2mm; padding: 2mm 3mm; border-left: 3px solid #247d78; background: #e5f4f2; color: #17615d; font: 800 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+      .print-toc-list { margin: 0; padding: 0; list-style: none; }
+      .print-toc-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 5mm; padding: 1.2mm 1mm; border-bottom: 1px dotted #cfd9e5; font-size: 11px; }
+      .print-toc-list a { color: #172033; font-family: var(--mono); text-decoration: none; }
+      .print-toc-status { flex: 0 0 auto; font: 800 10px var(--mono); }
+      .case-list { display: block; }
+      .case-card { box-shadow: none; border: 1px solid #cfd9e5; break-inside: avoid; margin: 0 0 9mm; }
+      .waveform-item { break-inside: avoid; margin-bottom: 6mm; }
+      .case-card.print-hidden { display: none !important; }
+      .case-card.is-hidden:not(.print-visible) { display: none !important; }
+      .case-head, .case-body { padding-left: 14px; padding-right: 14px; }
+      .image-board { break-inside: avoid; }
+      .project-select, .status-select, .tag-picker { appearance: none; border: 0; }
+      .annotation-handle { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Case navigation">
+      <div class="brand"><div class="brand-mark">DV</div><div><strong>数字验证报告</strong><span>Digital Verification Report</span></div></div>
+      <div class="side-title">当前报告</div>
+      <nav class="nav-list" id="caseNav">
+        <button class="nav-item active" type="button" data-target="overview"><span class="nav-dot"></span>概览</button>
+      </nav>
+      <div class="side-title">当前上下文</div>
+      <div class="nav-sub">HK1V11 / HK5B66<br>2026-09-22 / Verification</div>
+      <div class="side-foot">本地自动保存<br><span id="saveState">尚未修改</span></div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div class="day-title"><div class="eyebrow">Verification evidence book</div><h1>数字验证报告 · 2026-09-22</h1></div>
+        <label class="search"><input id="searchInput" type="search" placeholder="搜索 Case、信号或说明" aria-label="搜索验证记录"></label>
+        <div class="toolbar">
+          <select class="project-filter" id="projectFilter" aria-label="按项目筛选"><option value="ALL">全部项目</option><option value="HK1V11">HK1V11</option><option value="HK5B66">HK5B66</option></select>
+          <button class="tool-button" id="exportPdfButton" type="button">导出 PDF</button>
+          <button class="tool-button" id="backupButton" type="button">备份 JSON</button>
+          <button class="tool-button icon" id="themeButton" type="button" title="切换深色模式" aria-label="切换深色模式">◐</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="print-heading"><h1 id="printTitle">数字验证报告</h1><p id="printMeta"></p></section>
+        <section class="print-toc" id="printToc" aria-label="PDF 目录"></section>
+        <section class="summary-strip" aria-label="Summary">
+          <div class="summary-item"><div class="summary-label">今日记录</div><span class="summary-value blue" id="totalCount">02</span></div>
+          <div class="summary-item"><div class="summary-label">通过验证</div><span class="summary-value green" id="passCount">01</span></div>
+          <div class="summary-item"><div class="summary-label">需要关注</div><span class="summary-value" id="attentionCount">01</span></div>
+        </section>
+
+        <section class="case-list" id="caseList" aria-live="polite"></section>
+        <div class="empty" id="emptyState" hidden><strong>没有匹配的验证记录</strong>调整搜索条件，或新建一条 Case 记录。</div>
+      </div>
+    </main>
+  </div>
+  <div class="toast" role="status" aria-live="polite" id="toast"></div>
+
+  <template id="caseTemplate">
+    <article class="case-card" data-case-id="">
+      <header class="case-head">
+        <div class="case-identity">
+          <div class="case-name" data-field="name"></div>
+          <div class="case-meta"><span>Project: <code data-project-label></code></span><span>Seed: <code data-field="seed"></code></span><span>Last update: <time data-field="updated"></time></span></div>
+          <div class="case-tags" data-case-tags aria-label="Case tags"></div>
+        </div>
+        <div class="case-actions"><span class="tag project" data-project-label></span><span class="status-badge" data-status-label></span></div>
+      </header>
+      <div class="case-body">
+        <div class="detail-grid">
+          <div class="detail-label">验证目标</div><div class="editable-text" data-field="goal"></div>
+          <div class="detail-label">观察结论</div><div class="editable-text" data-field="observation"></div>
+          <div class="detail-label">检查点</div><div class="editable-text" data-field="checkpoint"></div>
+        </div>
+        <section class="evidence-block">
+          <div class="evidence-head"><div><h2>波形证据</h2><p>一个 Case 可保存多张波形，每张图片拥有独立标注。</p></div><span class="eyebrow">Multiple evidence</span></div>
+          <div class="evidence-list" data-evidence-list></div>
+        </section>
+      </div>
+    </article>
+  </template>
+
+  <template id="evidenceTemplate">
+    <article class="waveform-item" data-evidence-id="">
+      <header class="waveform-head"><div class="waveform-title">波形 <strong data-waveform-index></strong><span data-image-name></span></div></header>
+          <div class="image-board" data-board>
+            <img class="wave-image" data-image alt="Verification waveform evidence">
+            <svg class="annotation-layer tool-select" data-layer viewBox="0 0 1000 520" preserveAspectRatio="none" aria-label="波形图片标注区域" role="img" tabindex="-1">
+              <g data-annotations></g>
+            </svg>
+          </div>
+          <p class="evidence-caption" data-evidence-caption></p>
+    </article>
+  </template>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "wavebook-local-v1";
+      const ANNOTATION_CLIPBOARD_KEY = "wavebook-annotation-clipboard-v1";
+      const svgNs = "http://www.w3.org/2000/svg";
+      const READ_ONLY = true;
+      const allowedProjects = ["HK1V11", "HK5B66"];
+      const caseTags = [
+        { id: "io", label: "IO" },
+        { id: "register-rw", label: "Register R/W" },
+        { id: "register-function", label: "Register Function" },
+        { id: "unlock", label: "Unlock" }
+      ];
+      const initialWave = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520">
+          <rect width="1000" height="520" fill="#07121b"/>
+          <g stroke="#203444" stroke-width="1">${Array.from({length: 21}, (_, i) => `<path d="M${i*50} 0V520"/>`).join("")}${Array.from({length: 11}, (_, i) => `<path d="M0 ${i*52}H1000"/>`).join("")}</g>
+          <g font-family="monospace" font-size="17" fill="#9bb4ca"><text x="16" y="48">time</text><text x="16" y="128">dphy_rx.hs_clk</text><text x="16" y="208">dphy_rx.data[3:0]</text><text x="16" y="288">cmd_data_valid</text><text x="16" y="368">cmd_data_last</text><text x="16" y="448">line_length</text></g>
+          <g stroke="#5de1ba" stroke-width="4" fill="none"><path d="M190 115H260V145H350V115H425V145H505V115H590V145H670V115H750V145H830V115H930"/><path d="M190 268H290V238H392V268H495V238H600V268H700V238H805V268H910V238H980"/></g>
+          <g stroke="#35b6f1" stroke-width="4" fill="none"><path d="M190 348H700V318H945V348H980"/></g>
+          <g stroke="#ff726f" stroke-width="4" fill="none"><path d="M190 428H735V398H980"/></g>
+          <g fill="#dae7f4" font-family="monospace" font-size="16"><text x="215" y="30">420.75 us</text><text x="465" y="30">421.00 us</text><text x="715" y="30">421.25 us</text><text x="885" y="30">421.42 us</text><text x="214" y="493">3510</text><text x="526" y="493">3510</text><text x="771" y="493">7017</text></g>
+        </svg>`);
+
+      const defaultCases = [
+        {
+          id: "case-a", name: "t_8b2lane_PON_OPT_I1", project: "HK1V11", seed: "40198", status: "PASS", updated: "09:40",
+          goal: "验证上电阶段 PON_OPT_I=1 时 DRA_CS 的输出状态，以及 CS_AGND 不被额外拉低。",
+          observation: "上电完成后 DRA_CS 保持高电平；对应寄存器回读为 0x88，波形与预期一致。",
+          checkpoint: "检查 DRA_CS=1、CS_AGND=0；确认上电窗口内无意外的 charge-share 切换。",
+          caption: "图 1：PON_OPT=1 的上电窗口。黄色箭头标出 DRA_CS 的稳定采样点。",
+          image: initialWave, imageName: "示例波形（可直接替换）",
+          annotations: [{ id: "note-1", type: "arrow", x1: 842, y1: 73, x2: 842, y2: 118, color: "#ffcc3e", size: 5 }, { id: "note-2", type: "text", x: 716, y: 68, text: "DRA_CS = 1", color: "#ffffff", size: 22 }]
+        },
+        {
+          id: "case-b", name: "t_mipi_cmd_boot_test", project: "HK5B66", seed: "20931", status: "RUN", updated: "11:18",
+          goal: "记录 command mode boot 的首帧输出，并保留 line packet 与 scoreboard length error 的关联证据。",
+          observation: "f0 l7 的 actual byte count 为 7017；需要继续确认尾包路径与 cmd_data_last 的时序。",
+          checkpoint: "对齐 hsrx_lpkt_payload_last_1、cmd_data_last 和 line_length；保存首个报错前后的波形。",
+          caption: "图 2：首个 line length mismatch 的波形窗口。可继续添加框选和文字说明。",
+          image: initialWave, imageName: "示例波形（可直接替换）",
+          annotations: [{ id: "note-3", type: "rect", x: 698, y: 302, width: 260, height: 112, color: "#38acff", size: 4 }, { id: "note-4", type: "text", x: 698, y: 289, text: "cmd_data_last delayed", color: "#ffffff", size: 22 }]
+        }
+      ];
+
+      const utcUnlockCases = [
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc", name: "t_8b1lane_unlock_utc", project: "HK1V11", seed: "", status: "RUN", updated: "2026-09-22",
+          goal: "验证 R_FRM_CHK_MODE=0、R_UTC=00 时，普通 UTC 注错使 cr_done_lane 由 1→0；波形同时观察 UTC frame-error 置位及自动恢复后的 cr_done_lane 回高。",
+          observation: "test 仅开启 utc_test_en，R_UTC=00 对应 utc_num=6；第 5/6 帧首行分别在 i=1~6、i=1~7 插入异常编码。main_phase 等待 cr_done_lane 下降并检查 VS_O=6，随后关闭注错并打开 data-merge/chopper/analog checker。",
+          checkpoint: "确认 R_FRM_CHK_MODE=0、R_UTC=00、utc_test_en=1、utc_frm_test_en=0；观察 FRM_UTC_ERR_CNT 0→1、cr_done_lane 1→0→1。仅 VS_O=6 与下降沿为 testcase 显式判定；回高、training 和正常 PPM 仅作波形/日志观察。",
+          evidences: [], utcDescriptionRevision: 6
+        },
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc-00", name: "t_8b1lane_unlock_utc_00", project: "HK1V11", seed: "", status: "PASS", updated: "2026-07-27",
+          goal: "验证 R_UTC[1:0]=00（寄存器 0x21[5:4]，连续错误 6 次）时，发送序列在第 5、6 帧注入 UTC 错误后，DUT 是否拉低 cr_done_lane，完成 UTC unlock/break 检测。本 case 不包含重新 training、重新 lock 或恢复图像。",
+          observation: "cfg_frame0~8 写入 R_UTC=00；test 将 env_cfg.utc_test_en 置 1。isptx_sequence 将 utc_num 设为 6，并在 c==4/5（第 5/6 帧）的 j==0 数据中插入异常 10b 编码。main_phase 统计 VS_O 上升沿，等待 cr_done_lane 下降沿并要求计数为 6，随后调用 uvm_top.die()。源码没有 recovery training、重新 lock 或 checker 打开逻辑。",
+          checkpoint: "确认 0x21[5:4]=00、env_cfg.utc_test_en=1；检查第 5/6 帧首行异常编码后，UTC_CNT 累积至 6，UTC_ERR_CNT 由 0 变 1，最后 VS_O 计数为 6 且 cr_done_lane 下降。该 case 在 break 后调用 uvm_top.die()；网页中的 PASS 仅表示 unlock 检测记录，不代表 recovery/re-lock 已验证。",
+          evidences: [], utcDescriptionRevision: 3
+        },
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc-01", name: "t_8b1lane_unlock_utc_01", project: "HK1V11", seed: "", status: "PASS", updated: "2026-07-27",
+          goal: "验证 R_UTC[1:0]=01（寄存器 0x21[5:4]，连续错误 4 次）时，发送序列在第 5、6 帧注入 UTC 错误后，DUT 是否拉低 cr_done_lane，完成 UTC unlock/break 检测。本 case 不包含重新 training、重新 lock 或恢复图像。",
+          observation: "cfg_frame0~8 写入 R_UTC=01；test 将 env_cfg.utc_test_en 置 1。isptx_sequence 将 utc_num 设为 4，并在 c==4/5（第 5/6 帧）的 j==0 数据中插入异常 10b 编码。main_phase 统计 VS_O 上升沿，等待 cr_done_lane 下降沿并要求计数为 6，随后调用 uvm_top.die()。源码没有 recovery training、重新 lock 或 checker 打开逻辑。",
+          checkpoint: "确认 0x21[5:4]=01、env_cfg.utc_test_en=1；检查第 5/6 帧首行异常编码后，UTC_CNT 累积至 4，UTC_ERR_CNT 由 0 变 1，最后 VS_O 计数为 6 且 cr_done_lane 下降。该 case 在 break 后调用 uvm_top.die()；网页中的 PASS 仅表示 unlock 检测记录，不代表 recovery/re-lock 已验证。",
+          evidences: [], utcDescriptionRevision: 3
+        },
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc-10", name: "t_8b1lane_unlock_utc_10", project: "HK1V11", seed: "", status: "PASS", updated: "2026-07-27",
+          goal: "验证 R_UTC[1:0]=10（寄存器 0x21[5:4]，连续错误 2 次）时，发送序列在第 5、6 帧注入 UTC 错误后，DUT 是否拉低 cr_done_lane，完成 UTC unlock/break 检测。本 case 不包含重新 training、重新 lock 或恢复图像。",
+          observation: "cfg_frame0~8 写入 R_UTC=10；test 将 env_cfg.utc_test_en 置 1。isptx_sequence 将 utc_num 设为 2，并在 c==4/5（第 5/6 帧）的 j==0 数据中插入异常 10b 编码。main_phase 统计 VS_O 上升沿，等待 cr_done_lane 下降沿并要求计数为 6，随后调用 uvm_top.die()。源码没有 recovery training、重新 lock 或 checker 打开逻辑。",
+          checkpoint: "确认 0x21[5:4]=10、env_cfg.utc_test_en=1；检查第 5/6 帧首行异常编码后，UTC_CNT 累积至 2，UTC_ERR_CNT 由 0 变 1，最后 VS_O 计数为 6 且 cr_done_lane 下降。图中标注的时序应为 UTC_CNT=2 → UTC_ERR_CNT 0→1 → cr_done_lane 1→0。该 case 在 break 后调用 uvm_top.die()，不验证 recovery/re-lock。",
+          evidences: [], utcDescriptionRevision: 3
+        },
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc-11", name: "t_8b1lane_unlock_utc_11", project: "HK1V11", seed: "", status: "PASS", updated: "2026-07-27",
+          goal: "验证 R_UTC[1:0]=11（寄存器 0x21[5:4]，连续错误 2 次）时，发送序列在第 5、6 帧注入 UTC 错误后，DUT 是否拉低 cr_done_lane，完成 UTC unlock/break 检测。本 case 不包含重新 training、重新 lock 或恢复图像。",
+          observation: "cfg_frame0~8 写入 R_UTC=11；test 将 env_cfg.utc_test_en 置 1。isptx_sequence 将 utc_num 设为 2，并在 c==4/5（第 5/6 帧）的 j==0 数据中插入异常 10b 编码。main_phase 统计 VS_O 上升沿，等待 cr_done_lane 下降沿并要求计数为 6，随后调用 uvm_top.die()。源码没有 recovery training、重新 lock 或 checker 打开逻辑。",
+          checkpoint: "确认 0x21[5:4]=11、env_cfg.utc_test_en=1；检查第 5/6 帧首行异常编码后，UTC_CNT 累积至 2，UTC_ERR_CNT 由 0 变 1，最后 VS_O 计数为 6 且 cr_done_lane 下降。该 case 在 break 后调用 uvm_top.die()；网页中的 PASS 仅表示 unlock 检测记录，不代表 recovery/re-lock 已验证。",
+          evidences: [], utcDescriptionRevision: 3
+        },
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc-frm-0", name: "t_8b1lane_unlock_utc_frm_0", project: "HK1V11", seed: "", status: "PASS", updated: "2026-07-27",
+          goal: "验证 R_FRM_CHK_MODE=0（寄存器 0x21[6]，按寄存器描述在 32 帧范围内累积 UTC 错误）时，frame-UTC 注错路径是否使 DUT 拉低 cr_done_lane。本 case 不包含重新 training、重新 lock 或恢复图像。",
+          observation: "cfg_frame0~8 写入 R_FRM_CHK_MODE=0；test 关闭 env_cfg.utc_test_en、打开 env_cfg.utc_frm_test_en。isptx_sequence 将 utc_frm_num 设为 32，在 c==4/5（第 5/6 帧）的前 16 行数据中插入固定异常 10b 编码。main_phase 统计 VS_O 上升沿，等待 cr_done_lane 下降沿并要求计数为 6，随后调用 uvm_top.die()。源码没有 recovery training、重新 lock 或 checker 打开逻辑。",
+          checkpoint: "确认 0x21[6]=0、env_cfg.utc_test_en=0、env_cfg.utc_frm_test_en=1；检查第 5/6 帧受影响行的异常编码，FRM_UTC_ERR_CNT 由 0 变 1，再发生 VS_O 计数为 6 和 cr_done_lane 下降。该 case 在 break 后调用 uvm_top.die()；不要将其解释为恢复 lock 或图像 checker case。",
+          evidences: [], utcDescriptionRevision: 3
+        },
+        {
+          id: "hk1v11-t-8b1lane-unlock-utc-frm-1", name: "t_8b1lane_unlock_utc_frm_1", project: "HK1V11", seed: "", status: "PASS", updated: "2026-07-27",
+          goal: "验证 R_FRM_CHK_MODE=1（寄存器 0x21[6]，按寄存器描述在 16 帧范围内累积 UTC 错误）时，frame-UTC 注错路径是否使 DUT 拉低 cr_done_lane。本 case 不包含重新 training、重新 lock 或恢复图像。",
+          observation: "cfg_frame0~8 写入 R_FRM_CHK_MODE=1；test 关闭 env_cfg.utc_test_en、打开 env_cfg.utc_frm_test_en。isptx_sequence 将 utc_frm_num 设为 16，在 c==4 的前 15 行及 c==5 的前 16 行数据中插入固定异常 10b 编码。main_phase 统计 VS_O 上升沿，等待 cr_done_lane 下降沿并要求计数为 6，随后调用 uvm_top.die()。源码没有 recovery training、重新 lock 或 checker 打开逻辑。",
+          checkpoint: "确认 0x21[6]=1、env_cfg.utc_test_en=0、env_cfg.utc_frm_test_en=1；检查第 5/6 帧受影响行的异常编码，FRM_UTC_ERR_CNT 由 0 变 1，再发生 VS_O 计数为 6 和 cr_done_lane 下降。该 case 在 break 后调用 uvm_top.die()；不要将其解释为恢复 lock 或图像 checker case。",
+          evidences: [], utcDescriptionRevision: 3
+        }
+      ];
+
+      const eolCases = [
+        {
+          id: "hk1v11-t-8b1lane-eol-test12-0", name: "t_8b1lane_eol_test12_0", project: "HK1V11", seed: "", status: "RUN", updated: "2026-09-22",
+          goal: "验证 EOL 缺失时 TEST12=0 仍保持完整 LENB：左右 LENB 的完整脉冲数均应为 FRAME_NUM×VACT。",
+          observation: "test 设置 eol_missing_test=1 并 force TEST12=0。sequence 以普通 data slot 替换每行末 K2/K3；最后一行替换 K4+CTRL_F，保持行时间。监视器仅在 eol_check_window 内统计完整的 LENB_L/LENB_R 高低脉冲。",
+          checkpoint: "检查 TEST12=0、eol_missing_test=1、EOL 替换窗口和 LENB_L/LENB_R 的完整上升沿/下降沿；两侧计数都必须等于 FRAME_NUM×VACT，否则产生 EOL/CHECK UVM_ERROR。",
+          evidences: [], eolDescriptionRevision: 1
+        },
+        {
+          id: "hk1v11-t-8b1lane-eol-test12-1", name: "t_8b1lane_eol_test12_1", project: "HK1V11", seed: "", status: "RUN", updated: "2026-09-22",
+          goal: "验证 EOL 缺失时 TEST12=1 关闭完整 LENB 检出：左右 LENB 的完整脉冲数均应为 0。",
+          observation: "test 设置 eol_missing_test=1 并 force TEST12=1，使用与 TEST12=0 相同的 EOL 缺失发送方式和 active-video 统计窗口。",
+          checkpoint: "检查 TEST12=1、eol_missing_test=1、EOL 替换窗口和 LENB_L/LENB_R 完整脉冲；任一侧计数非 0 均产生 EOL/CHECK UVM_ERROR。",
+          evidences: [], eolDescriptionRevision: 1
+        }
+      ];
+
+      const dpolinvCases = [
+        {
+          id: "hk1v11-t-h3840-v16-fps120-dpolinv1", name: "t_H3840_V16_FPS120_DPOLINV1", project: "HK1V11", seed: "", status: "RUN", updated: "2026-09-23",
+          goal: "验证 3840×16、12 port、8 帧、120 FPS 场景中 DPOLINV=1 时的 data-merge、digital-top 和 analog 输出检查路径。",
+          observation: "vseq 仅调用 base_vseq，进而启动 isptx_sequence；cfg_frame0~8 均为 DPOLINV=1。test 打开 data_merge_check_on、digital_top_check_on、analog_check_on，关闭 chopper_check_on。",
+          checkpoint: "Data-merge scoreboard 比较 C model 24b 数据与 RTL 队列且不允许残留；digital-top scoreboard 对左右、奇偶输出取 C model golden，在 DPOLINV=1 时翻转每个 8b 分量的 bit[7] 后比较；analog scoreboard 检查行 POL，并在 DPOLINV=1 时对 VLP pattern 和 C-model 帧像素按位取反后比较 DUT 数据。",
+          evidences: [], dpolinvDescriptionRevision: 2
+        }
+      ];
+
+      let cases = loadCases();
+      let annotationClipboard = loadAnnotationClipboard();
+      let toastTimer;
+      let activeCaseId = cases[0]?.id || null;
+      const list = document.querySelector("#caseList");
+      const template = document.querySelector("#caseTemplate");
+      const evidenceTemplate = document.querySelector("#evidenceTemplate");
+      const toast = document.querySelector("#toast");
+      const empty = document.querySelector("#emptyState");
+
+      function loadCases() {
+        let source;
+        let storedSource = null;
+        let storageNeedsSave = false;
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (Array.isArray(stored) && stored.length) {
+            storedSource = stored;
+            source = stored;
+          } else {
+            source = structuredClone([...defaultCases, ...utcUnlockCases, ...eolCases, ...dpolinvCases]);
+          }
+        } catch { source = structuredClone([...defaultCases, ...utcUnlockCases, ...eolCases, ...dpolinvCases]); }
+        const existingIds = new Set(source.map(item => item.id));
+        for (const seedCase of [...utcUnlockCases, ...eolCases, ...dpolinvCases]) {
+          const existingCase = source.find(item => item.id === seedCase.id);
+          const revisionKey = "utcDescriptionRevision" in seedCase
+            ? "utcDescriptionRevision"
+            : "eolDescriptionRevision" in seedCase
+              ? "eolDescriptionRevision"
+              : "dpolinvDescriptionRevision";
+          if (!existingIds.has(seedCase.id)) {
+            source.push(structuredClone(seedCase));
+            existingIds.add(seedCase.id);
+            storageNeedsSave = true;
+          } else if (existingCase?.[revisionKey] !== seedCase[revisionKey]) {
+            existingCase.goal = seedCase.goal;
+            existingCase.observation = seedCase.observation;
+            existingCase.checkpoint = seedCase.checkpoint;
+            existingCase[revisionKey] = seedCase[revisionKey];
+            storageNeedsSave = true;
+          }
+        }
+        const normalized = source.map(normalizeCase);
+        if (storedSource && (storageNeedsSave || JSON.stringify(storedSource) !== JSON.stringify(normalized))) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized)); } catch { /* Keep the in-memory migration if storage is full. */ }
+        }
+        return normalized;
+      }
+
+      function normalizeCase(item) {
+        const legacyEvidence = item.image ? [{
+          id: crypto.randomUUID(),
+          image: item.image,
+          imageName: item.imageName || "波形图片",
+          caption: item.caption || "",
+          annotations: item.annotations || []
+        }] : [];
+        const sourceEvidences = Array.isArray(item.evidences) ? item.evidences : legacyEvidence;
+        return {
+          ...item,
+          project: allowedProjects.includes(item.project) ? item.project : "HK1V11",
+          tags: Array.from(new Set((Array.isArray(item.tags) ? item.tags : []).filter(tag => caseTags.some(option => option.id === tag)))),
+          updated: normalizeUpdated(item.updated),
+          evidences: sourceEvidences.map(normalizeEvidence)
+        };
+      }
+
+      function formatDate(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function normalizeUpdated(value) {
+        return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? value : formatDate();
+      }
+
+      function normalizeEvidence(evidence) {
+        return {
+          id: evidence.id || crypto.randomUUID(),
+          image: evidence.image || initialWave,
+          imageName: evidence.imageName || "波形图片",
+          caption: evidence.caption || "",
+          annotations: (evidence.annotations || []).map(normalizeAnnotation)
+        };
+      }
+
+      function normalizeAnnotation(annotation) {
+        const defaults = annotation.type === "arrow"
+          ? { color: "#ffcc3e", size: 5 }
+          : annotation.type === "rect"
+            ? { color: "#38acff", size: 4 }
+            : { color: "#ffffff", size: 22, text: "注释" };
+        return { ...defaults, ...annotation };
+      }
+
+      function loadAnnotationClipboard() {
+        try {
+          const saved = JSON.parse(sessionStorage.getItem(ANNOTATION_CLIPBOARD_KEY));
+          const annotations = Array.isArray(saved) ? saved : [saved];
+          return annotations
+            .filter(annotation => ["arrow", "rect", "text"].includes(annotation?.type))
+            .map(normalizeAnnotation);
+        } catch { return []; }
+      }
+
+      function copyAnnotations(annotations) {
+        annotationClipboard = annotations.map(annotation => structuredClone(annotation));
+        try { sessionStorage.setItem(ANNOTATION_CLIPBOARD_KEY, JSON.stringify(annotationClipboard)); } catch { /* The current tab can still paste in memory. */ }
+        refreshPasteButtons();
+      }
+
+      function refreshPasteButtons() {
+        document.querySelectorAll("[data-action='paste-annotation']").forEach(button => {
+          button.disabled = !annotationClipboard.length;
+        });
+      }
+
+      function clamp(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
+      }
+
+      function annotationBounds(annotation) {
+        if (annotation.type === "arrow") {
+          return {
+            minX: Math.min(annotation.x1, annotation.x2), maxX: Math.max(annotation.x1, annotation.x2),
+            minY: Math.min(annotation.y1, annotation.y2), maxY: Math.max(annotation.y1, annotation.y2)
+          };
+        }
+        if (annotation.type === "rect") {
+          return { minX: annotation.x, maxX: annotation.x + annotation.width, minY: annotation.y, maxY: annotation.y + annotation.height };
+        }
+        const textWidth = Math.max(115, annotation.text.length * annotation.size * 0.7 + 28);
+        return { minX: annotation.x - 10, maxX: annotation.x - 10 + textWidth, minY: annotation.y - annotation.size - 7, maxY: annotation.y + 11 };
+      }
+
+      function offsetCopiedAnnotations(annotations) {
+        const copied = annotations.map(annotation => structuredClone(annotation));
+        const bounds = copied.map(annotationBounds).reduce((group, current) => ({
+          minX: Math.min(group.minX, current.minX), maxX: Math.max(group.maxX, current.maxX),
+          minY: Math.min(group.minY, current.minY), maxY: Math.max(group.maxY, current.maxY)
+        }));
+        const offset = 20;
+        const dx = clamp(offset, -bounds.minX, 1000 - bounds.maxX);
+        const dy = clamp(offset, -bounds.minY, 520 - bounds.maxY);
+        copied.forEach(annotation => {
+          annotation.id = crypto.randomUUID();
+          if (annotation.type === "arrow") {
+            annotation.x1 += dx;
+            annotation.x2 += dx;
+            annotation.y1 += dy;
+            annotation.y2 += dy;
+          } else {
+            annotation.x += dx;
+            annotation.y += dy;
+          }
+        });
+        return copied;
+      }
+
+      function saveCases(message = "已自动保存到此浏览器", item = null) {
+        try {
+          if (item) item.updated = formatDate();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cases));
+          document.querySelector("#saveState").textContent = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }) + " 已保存";
+          if (message) showToast(message);
+        } catch {
+          showToast("保存失败：图片可能超出浏览器本地存储容量");
+        }
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2100);
+      }
+
+      function escapeText(value) { return String(value || ""); }
+
+      function statusClass(status) { return status.toLowerCase(); }
+
+      function getSelectedProject() { return document.querySelector("#projectFilter")?.value || "ALL"; }
+
+      function getScopedCases() {
+        const project = getSelectedProject();
+        return project === "ALL" ? cases : cases.filter(item => item.project === project);
+      }
+
+      function getCaseGroups(items) {
+        return [...caseTags, { id: "uncategorized", label: "Uncategorized" }]
+          .map(group => ({
+            ...group,
+            cases: items.filter(item => group.id === "uncategorized" ? !item.tags.length : item.tags.includes(group.id))
+          }))
+          .filter(group => group.cases.length);
+      }
+
+      function ensureActiveCase() {
+        const scopedCases = getScopedCases();
+        if (!scopedCases.some(item => item.id === activeCaseId)) activeCaseId = scopedCases[0]?.id || null;
+      }
+
+      function setActiveNav(target) {
+        document.querySelectorAll("#caseNav .nav-item").forEach(node => node.classList.toggle("active", node.dataset.target === target));
+      }
+
+      function updateSummary() {
+        const scopedCases = getScopedCases();
+        const pass = scopedCases.filter(item => item.status === "PASS").length;
+        document.querySelector("#totalCount").textContent = String(scopedCases.length).padStart(2, "0");
+        document.querySelector("#passCount").textContent = String(pass).padStart(2, "0");
+        document.querySelector("#attentionCount").textContent = String(scopedCases.length - pass).padStart(2, "0");
+      }
+
+      function refreshNav() {
+        const nav = document.querySelector("#caseNav");
+        nav.querySelectorAll(".case-nav-dynamic").forEach(node => node.remove());
+        ensureActiveCase();
+        getCaseGroups(getScopedCases()).forEach(group => {
+          const heading = document.createElement("div");
+          heading.className = "nav-group-title case-nav-dynamic";
+          heading.textContent = group.label;
+          nav.append(heading);
+          group.cases.forEach(item => {
+            const button = document.createElement("button");
+            button.className = "nav-item case-nav-dynamic";
+            button.type = "button";
+            button.dataset.target = item.id;
+            button.innerHTML = `<span class="nav-dot"></span>${escapeText(item.name)}`;
+            nav.append(button);
+          });
+        });
+        setActiveNav(activeCaseId || "overview");
+      }
+
+      function getCase(id) { return cases.find(item => item.id === id); }
+
+      function updateCase(id, field, value, shouldSave = true) {
+        const item = getCase(id);
+        if (!item) return;
+        item[field] = value;
+        item.updated = formatDate();
+        if (shouldSave) saveCases();
+      }
+
+      function render() {
+        list.replaceChildren();
+        cases.forEach(item => list.append(renderCase(item)));
+        updateSummary();
+        refreshNav();
+        applySearch();
+      }
+
+      function renderCase(item) {
+        const fragment = template.content.cloneNode(true);
+        const card = fragment.querySelector(".case-card");
+        card.dataset.caseId = item.id;
+        card.id = `case-${item.id}`;
+        card.querySelectorAll("[data-field]").forEach(element => {
+          const field = element.dataset.field;
+          if (element.tagName === "SELECT") element.value = item[field];
+          else element.textContent = item[field] || "";
+        });
+        card.querySelector("[data-project-label]").textContent = item.project;
+        const status = card.querySelector("[data-status-label]");
+        status.textContent = item.status;
+        status.classList.add(statusClass(item.status));
+        renderCaseTags(card, item);
+        const evidenceList = card.querySelector("[data-evidence-list]");
+        item.evidences.forEach((evidence, index) => evidenceList.append(renderEvidence(item, evidence, index)));
+        card.addEventListener("pointerdown", () => { activeCaseId = item.id; setActiveNav(item.id); });
+        return card;
+      }
+
+      function renderEvidence(item, evidence, index) {
+        const fragment = evidenceTemplate.content.cloneNode(true);
+        const element = fragment.querySelector(".waveform-item");
+        element.dataset.evidenceId = evidence.id;
+        element.querySelector("[data-waveform-index]").textContent = String(index + 1).padStart(2, "0");
+        element.querySelector("[data-image-name]").textContent = evidence.imageName;
+        element.querySelector("[data-image]").src = evidence.image || initialWave;
+        const caption = element.querySelector("[data-evidence-caption]");
+        caption.textContent = evidence.caption;
+        bindBoard(element, item, evidence);
+        return fragment;
+      }
+
+      function bindTextFields(card, item) {
+        card.querySelectorAll("[contenteditable='true']").forEach(element => {
+          element.addEventListener("input", () => updateCase(item.id, element.dataset.field, element.textContent, false));
+          element.addEventListener("blur", () => { updateCase(item.id, element.dataset.field, element.textContent, false); saveCases(undefined, item); refreshNav(); });
+          element.addEventListener("keydown", event => {
+            if (event.key === "Escape") { event.preventDefault(); element.blur(); }
+          });
+        });
+      }
+
+      function bindStatus(card, item) {
+        const select = card.querySelector(".status-select");
+        select.addEventListener("change", () => {
+          select.className = "status-select " + statusClass(select.value);
+          updateCase(item.id, "status", select.value);
+          updateSummary();
+        });
+      }
+
+      function bindProject(card, item) {
+        const select = card.querySelector(".project-select");
+        select.addEventListener("change", () => {
+          updateCase(item.id, "project", select.value);
+          card.querySelector("[data-project-label]").textContent = select.value;
+          ensureActiveCase();
+          updateSummary();
+          refreshNav();
+          applySearch();
+        });
+      }
+
+      function renderCaseTags(card, item) {
+        const container = card.querySelector("[data-case-tags]");
+        container.replaceChildren();
+        const tags = item.tags.length ? caseTags.filter(option => item.tags.includes(option.id)) : [{ label: "Uncategorized", id: "uncategorized" }];
+        tags.forEach(tag => {
+          const chip = document.createElement("span");
+          chip.className = `case-tag${tag.id === "uncategorized" ? " uncategorized" : ""}`;
+          chip.textContent = tag.label;
+          container.append(chip);
+        });
+      }
+
+      function renderPrintToc(items) {
+        const toc = document.querySelector("#printToc");
+        toc.replaceChildren();
+        const heading = document.createElement("h2");
+        heading.textContent = "目录";
+        const groups = document.createElement("div");
+        groups.className = "print-toc-groups";
+        getCaseGroups(items).forEach(group => {
+          const section = document.createElement("section");
+          section.className = "print-toc-group";
+          const title = document.createElement("h3");
+          title.textContent = group.label;
+          const list = document.createElement("ul");
+          list.className = "print-toc-list";
+          group.cases.forEach(item => {
+            const row = document.createElement("li");
+            const link = document.createElement("a");
+            link.href = `#case-${item.id}`;
+            link.textContent = item.name;
+            const status = document.createElement("span");
+            status.className = "print-toc-status";
+            status.textContent = item.status;
+            row.append(link, status);
+            list.append(row);
+          });
+          section.append(title, list);
+          groups.append(section);
+        });
+        toc.append(heading, groups);
+      }
+
+      function bindCaseTags(card, item) {
+        card.querySelectorAll("[data-case-tag]").forEach(input => {
+          input.addEventListener("change", () => {
+            item.tags = Array.from(card.querySelectorAll("[data-case-tag]:checked"), checkbox => checkbox.dataset.caseTag);
+            renderCaseTags(card, item);
+            saveCases("Case tags updated", item);
+            refreshNav();
+          });
+        });
+      }
+
+      function bindDelete(card, item) {
+        card.querySelector(".delete-case").addEventListener("click", () => {
+          if (!confirm(`删除 ${item.name}？此操作不能撤销。`)) return;
+          cases = cases.filter(entry => entry.id !== item.id);
+          saveCases("已删除验证记录");
+          render();
+        });
+      }
+
+      function readImageFile(file) {
+        return new Promise((resolve, reject) => {
+          if (!file.type.startsWith("image/")) { reject(new Error("not-image")); return; }
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error || new Error("read-failed"));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function bindAddWaveforms(card, item) {
+        card.querySelector("[data-add-waveform]").addEventListener("change", event => {
+          addWaveformFiles(item, Array.from(event.target.files || []), "波形已添加");
+        });
+      }
+
+      async function addWaveformFiles(item, files, successMessage) {
+        const imageFiles = files.filter(file => file.type.startsWith("image/"));
+        if (!imageFiles.length) { showToast("请选择或粘贴 PNG、JPG 等图片文件"); return; }
+        try {
+          const newEvidences = await Promise.all(imageFiles.map(async file => ({
+            id: crypto.randomUUID(),
+            image: await readImageFile(file),
+            imageName: file.name || `clipboard-${Date.now()}.png`,
+            caption: "",
+            annotations: []
+          })));
+          item.evidences.push(...newEvidences);
+            saveCases(`${successMessage}（${newEvidences.length} 张）`, item);
+          render();
+          const lastId = newEvidences.at(-1).id;
+          requestAnimationFrame(() => document.querySelector(`[data-evidence-id="${lastId}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+        } catch { showToast("图片读取失败，请重新选择"); }
+      }
+
+      function bindReplaceWaveform(element, item, evidence) {
+        element.querySelector("[data-replace-waveform]").addEventListener("change", async event => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          try {
+            evidence.image = await readImageFile(file);
+            evidence.imageName = file.name || `waveform-${Date.now()}.png`;
+            evidence.annotations = [];
+            saveCases("当前波形已替换，原标注已清除", item);
+            render();
+          } catch { showToast("图片读取失败，请重新选择"); }
+        });
+      }
+
+      function bindDeleteWaveform(element, item, evidence) {
+        element.querySelector(".delete-waveform").addEventListener("click", () => {
+          if (!confirm(`删除波形 ${evidence.imageName}？此操作不能撤销。`)) return;
+          item.evidences = item.evidences.filter(entry => entry.id !== evidence.id);
+          saveCases("波形已删除", item);
+          render();
+        });
+      }
+
+      function svgElement(name, attributes = {}) {
+        const element = document.createElementNS(svgNs, name);
+        Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, String(value)));
+        return element;
+      }
+
+      function arrowHeadPoints(annotation) {
+        const angle = Math.atan2(annotation.y2 - annotation.y1, annotation.x2 - annotation.x1);
+        const length = Math.max(16, annotation.size * 3.5);
+        const spread = length * 0.48;
+        const baseX = annotation.x2 - Math.cos(angle) * length;
+        const baseY = annotation.y2 - Math.sin(angle) * length;
+        const leftX = baseX + Math.cos(angle + Math.PI / 2) * spread;
+        const leftY = baseY + Math.sin(angle + Math.PI / 2) * spread;
+        const rightX = baseX + Math.cos(angle - Math.PI / 2) * spread;
+        const rightY = baseY + Math.sin(angle - Math.PI / 2) * spread;
+        return `${annotation.x2},${annotation.y2} ${leftX},${leftY} ${rightX},${rightY}`;
+      }
+
+      function drawAnnotation(group, annotation, selected = false, showHandles = false) {
+        const wrapper = svgElement("g", { class: "annotation", "data-id": annotation.id });
+        if (!READ_ONLY) {
+          wrapper.setAttribute("tabindex", "0");
+          wrapper.setAttribute("role", "button");
+          wrapper.setAttribute("aria-label", "标注，可拖动或删除");
+        }
+        if (selected) wrapper.classList.add("selected");
+        if (annotation.type === "arrow") {
+          wrapper.append(svgElement("line", { class: "arrow-line", x1: annotation.x1, y1: annotation.y1, x2: annotation.x2, y2: annotation.y2, stroke: annotation.color, "stroke-width": annotation.size, "stroke-linecap": "round" }));
+          wrapper.append(svgElement("polygon", { class: "arrow-head", points: arrowHeadPoints(annotation), fill: annotation.color }));
+          if (showHandles) {
+            wrapper.append(svgElement("circle", { class: "annotation-handle", "data-handle": "start", cx: annotation.x1, cy: annotation.y1, r: 9 }));
+            wrapper.append(svgElement("circle", { class: "annotation-handle", "data-handle": "end", cx: annotation.x2, cy: annotation.y2, r: 9 }));
+          }
+        } else if (annotation.type === "rect") {
+          wrapper.append(svgElement("rect", { class: "mark-box", x: annotation.x, y: annotation.y, width: annotation.width, height: annotation.height, rx: 5, stroke: annotation.color, "stroke-width": annotation.size }));
+          if (showHandles) {
+            const corners = {
+              "top-left": [annotation.x, annotation.y],
+              "top-right": [annotation.x + annotation.width, annotation.y],
+              "bottom-left": [annotation.x, annotation.y + annotation.height],
+              "bottom-right": [annotation.x + annotation.width, annotation.y + annotation.height]
+            };
+            Object.entries(corners).forEach(([corner, [cx, cy]]) => {
+              wrapper.append(svgElement("circle", { class: "annotation-handle", "data-handle": corner, cx, cy, r: 9 }));
+            });
+          }
+        } else {
+          const boxHeight = annotation.size + 18;
+          const fallbackWidth = Math.max(115, annotation.text.length * annotation.size * 0.7 + 28);
+          const noteBackground = svgElement("rect", { class: "note-bg", x: annotation.x - 10, y: annotation.y - annotation.size - 7, width: fallbackWidth, height: boxHeight, rx: 6, stroke: annotation.color });
+          const text = svgElement("text", { x: annotation.x, y: annotation.y, fill: annotation.color, "font-size": annotation.size });
+          text.textContent = annotation.text;
+          wrapper.append(noteBackground, text);
+          group.append(wrapper);
+          const textWidth = text.getComputedTextLength();
+          if (Number.isFinite(textWidth) && textWidth > 0) {
+            noteBackground.setAttribute("width", String(Math.max(115, Math.ceil(textWidth) + 28)));
+          }
+          return;
+        }
+        group.append(wrapper);
+      }
+
+      function bindBoard(card, item, evidence) {
+        let tool = "select";
+        let drawing = null;
+        let selectedIds = new Set();
+        let dragging = null;
+        let resizing = null;
+        const styleDefaults = {
+          arrow: { color: "#ffcc3e", size: 5 },
+          rect: { color: "#38acff", size: 4 },
+          text: { color: "#ffffff", size: 22 }
+        };
+        const layer = card.querySelector("[data-layer]");
+        const group = card.querySelector("[data-annotations]");
+        const board = card.querySelector("[data-board]");
+        if (READ_ONLY) {
+          evidence.annotations.forEach(annotation => drawAnnotation(group, annotation));
+          return;
+        }
+        const toolButtons = card.querySelectorAll("[data-tool]");
+        const selectAllAnnotationsButton = card.querySelector("[data-action='select-all-annotations']");
+        const copySelectedButton = card.querySelector("[data-action='copy-selected']");
+        const pasteAnnotationButton = card.querySelector("[data-action='paste-annotation']");
+        const deleteSelectedButton = card.querySelector("[data-action='delete-selected']");
+        const colorInput = card.querySelector("[data-property='color']");
+        const sizeInput = card.querySelector("[data-property='size']");
+        const sizeOutput = card.querySelector("[data-size-output]");
+        const textProperty = card.querySelector("[data-text-property]");
+        const textInput = card.querySelector("[data-property='text']");
+        const propertyStatus = card.querySelector("[data-property-status]");
+
+        function renderAnnotations() {
+          group.replaceChildren();
+          const showHandles = selectedIds.size === 1;
+          evidence.annotations.forEach(annotation => {
+            const selected = selectedIds.has(annotation.id);
+            drawAnnotation(group, annotation, selected, selected && showHandles);
+          });
+        }
+
+        function selectedAnnotations() { return evidence.annotations.filter(annotation => selectedIds.has(annotation.id)); }
+
+        function selectedAnnotation() { return selectedAnnotations()[0]; }
+
+        function syncPropertyPanel() {
+          const annotations = selectedAnnotations();
+          const annotation = annotations[0];
+          const defaults = styleDefaults[tool] || styleDefaults.arrow;
+          const editable = Boolean(annotation) || tool !== "select";
+          const current = annotation || defaults;
+          colorInput.disabled = !editable;
+          sizeInput.disabled = !editable;
+          colorInput.value = current.color;
+          sizeInput.min = annotation?.type === "text" || tool === "text" ? "10" : "2";
+          sizeInput.max = annotation?.type === "text" || tool === "text" ? "64" : "20";
+          sizeInput.value = current.size;
+          sizeOutput.value = current.size;
+          sizeOutput.textContent = current.size;
+          textProperty.hidden = annotations.length !== 1 || annotation?.type !== "text";
+          textInput.value = annotations.length === 1 && annotation?.type === "text" ? annotation.text : "";
+          selectAllAnnotationsButton.disabled = !evidence.annotations.length;
+          copySelectedButton.disabled = !annotations.length;
+          pasteAnnotationButton.disabled = !annotationClipboard.length;
+          deleteSelectedButton.disabled = !annotations.length;
+          propertyStatus.textContent = annotations.length > 1 ? `已选择 ${annotations.length} 个标注` : annotation ? `已选择 ${annotation.type}` : tool === "select" ? "未选择标注（Shift+点击可多选）" : `新建 ${tool}`;
+        }
+
+        renderAnnotations();
+        syncPropertyPanel();
+
+        function setTool(next) {
+          tool = next;
+          layer.className.baseVal = "annotation-layer tool-" + next;
+          toolButtons.forEach(button => button.classList.toggle("active", button.dataset.tool === next));
+          selectedIds.clear();
+          renderAnnotations();
+          syncPropertyPanel();
+        }
+
+        function point(event) {
+          const rect = layer.getBoundingClientRect();
+          return { x: Math.max(0, Math.min(1000, (event.clientX - rect.left) / rect.width * 1000)), y: Math.max(0, Math.min(520, (event.clientY - rect.top) / rect.height * 520)) };
+        }
+
+        function resizeRect(annotation, corner, p) {
+          const opposite = {
+            "top-left": { x: annotation.x + annotation.width, y: annotation.y + annotation.height },
+            "top-right": { x: annotation.x, y: annotation.y + annotation.height },
+            "bottom-left": { x: annotation.x + annotation.width, y: annotation.y },
+            "bottom-right": { x: annotation.x, y: annotation.y }
+          }[corner];
+          annotation.x = Math.min(p.x, opposite.x);
+          annotation.y = Math.min(p.y, opposite.y);
+          annotation.width = Math.abs(p.x - opposite.x);
+          annotation.height = Math.abs(p.y - opposite.y);
+        }
+
+        function deleteSelected() {
+          if (!selectedIds.size) return;
+          const count = selectedIds.size;
+          evidence.annotations = evidence.annotations.filter(annotation => !selectedIds.has(annotation.id));
+          selectedIds.clear();
+          renderAnnotations();
+          syncPropertyPanel();
+          saveCases(`已删除 ${count} 个标注`, item);
+        }
+
+        function selectAllAnnotations() {
+          if (!evidence.annotations.length) return;
+          tool = "select";
+          layer.className.baseVal = "annotation-layer tool-select";
+          toolButtons.forEach(button => button.classList.toggle("active", button.dataset.tool === tool));
+          selectedIds = new Set(evidence.annotations.map(annotation => annotation.id));
+          renderAnnotations();
+          syncPropertyPanel();
+          showToast(`已选择 ${selectedIds.size} 个标注`);
+        }
+
+        function copySelected() {
+          const annotations = selectedAnnotations();
+          if (!annotations.length) {
+            showToast("请先选择一个或多个标注");
+            return;
+          }
+          copyAnnotations(annotations);
+          syncPropertyPanel();
+          showToast(`已复制 ${annotations.length} 个标注，可在任意波形粘贴`);
+        }
+
+        function pasteAnnotation() {
+          if (!annotationClipboard.length) {
+            showToast("请先选择并复制标注");
+            return;
+          }
+          const annotations = offsetCopiedAnnotations(annotationClipboard);
+          evidence.annotations.push(...annotations);
+          setTool("select");
+          selectedIds = new Set(annotations.map(annotation => annotation.id));
+          renderAnnotations();
+          syncPropertyPanel();
+          saveCases(`已粘贴 ${annotations.length} 个标注`, item);
+        }
+
+        toolButtons.forEach(button => button.addEventListener("click", () => setTool(button.dataset.tool)));
+        selectAllAnnotationsButton.addEventListener("click", selectAllAnnotations);
+        copySelectedButton.addEventListener("click", copySelected);
+        pasteAnnotationButton.addEventListener("click", pasteAnnotation);
+        deleteSelectedButton.addEventListener("click", deleteSelected);
+        card.querySelector("[data-action='clear']").addEventListener("click", () => {
+          if (!evidence.annotations.length) return;
+          if (!confirm("清除这张图片上的所有标注？")) return;
+          evidence.annotations = [];
+          selectedIds.clear();
+          renderAnnotations();
+          syncPropertyPanel();
+          saveCases("标注已清除", item);
+        });
+
+        colorInput.addEventListener("input", () => {
+          const annotations = selectedAnnotations();
+          if (annotations.length) annotations.forEach(annotation => { annotation.color = colorInput.value; });
+          else if (styleDefaults[tool]) styleDefaults[tool].color = colorInput.value;
+          renderAnnotations();
+        });
+        colorInput.addEventListener("change", () => saveCases("标注颜色已更新", item));
+        sizeInput.addEventListener("input", () => {
+          const value = Number(sizeInput.value);
+          const annotations = selectedAnnotations();
+          if (annotations.length) annotations.forEach(annotation => { annotation.size = value; });
+          else if (styleDefaults[tool]) styleDefaults[tool].size = value;
+          sizeOutput.value = value;
+          sizeOutput.textContent = value;
+          renderAnnotations();
+        });
+        sizeInput.addEventListener("change", () => saveCases("标注大小已更新", item));
+        textInput.addEventListener("input", () => {
+          const annotation = selectedAnnotation();
+          if (selectedIds.size !== 1 || !annotation || annotation.type !== "text") return;
+          annotation.text = textInput.value || "注释";
+          renderAnnotations();
+        });
+        textInput.addEventListener("change", () => saveCases("注释文字已更新", item));
+
+        layer.addEventListener("pointerdown", event => {
+          const target = event.target.closest(".annotation");
+          const handle = event.target.closest("[data-handle]");
+          const p = point(event);
+          activeCaseId = item.id;
+          layer.focus();
+          if (tool === "select" && target) {
+            const targetId = target.dataset.id;
+            if (event.shiftKey) {
+              if (selectedIds.has(targetId)) selectedIds.delete(targetId);
+              else selectedIds.add(targetId);
+              renderAnnotations();
+              syncPropertyPanel();
+              return;
+            }
+            if (!selectedIds.has(targetId)) selectedIds = new Set([targetId]);
+            const annotation = selectedAnnotation();
+            if (handle && selectedIds.size === 1 && annotation?.type === "arrow") {
+              resizing = { type: "arrow", endpoint: handle.dataset.handle };
+            } else if (handle && selectedIds.size === 1 && annotation?.type === "rect") {
+              resizing = { type: "rect", corner: handle.dataset.handle };
+            } else {
+              dragging = { start: p, snapshots: selectedAnnotations().map(entry => structuredClone(entry)) };
+            }
+            layer.setPointerCapture(event.pointerId);
+            renderAnnotations();
+            syncPropertyPanel();
+            return;
+          }
+          if (tool === "text") {
+            const text = prompt("输入注释文字：", "检查此处");
+            if (text?.trim()) {
+              const style = styleDefaults.text;
+              const annotation = { id: crypto.randomUUID(), type: "text", x: p.x, y: p.y, text: text.trim(), color: style.color, size: style.size };
+              evidence.annotations.push(annotation);
+              selectedIds = new Set([annotation.id]);
+              saveCases("文字标注已添加", item);
+              renderAnnotations();
+              syncPropertyPanel();
+            }
+            return;
+          }
+          if (tool === "arrow" || tool === "rect") {
+            drawing = { start: p };
+            layer.setPointerCapture(event.pointerId);
+          } else {
+            selectedIds.clear();
+            renderAnnotations();
+            syncPropertyPanel();
+          }
+        });
+
+        layer.addEventListener("pointermove", event => {
+          const p = point(event);
+          if (resizing?.type === "arrow" && selectedAnnotation()?.type === "arrow") {
+            const annotation = selectedAnnotation();
+            if (resizing.endpoint === "start") { annotation.x1 = p.x; annotation.y1 = p.y; }
+            else { annotation.x2 = p.x; annotation.y2 = p.y; }
+            renderAnnotations();
+            return;
+          }
+          if (resizing?.type === "rect" && selectedAnnotation()?.type === "rect") {
+            resizeRect(selectedAnnotation(), resizing.corner, p);
+            renderAnnotations();
+            return;
+          }
+          if (dragging && selectedIds.size) {
+            const dx = p.x - dragging.start.x;
+            const dy = p.y - dragging.start.y;
+            dragging.snapshots.forEach(snapshot => {
+              const annotation = evidence.annotations.find(entry => entry.id === snapshot.id);
+              if (!annotation) return;
+              Object.assign(annotation, snapshot);
+              if (annotation.type === "arrow") { annotation.x1 += dx; annotation.y1 += dy; annotation.x2 += dx; annotation.y2 += dy; }
+              else { annotation.x += dx; annotation.y += dy; }
+            });
+            renderAnnotations();
+          }
+        });
+
+        layer.addEventListener("pointerup", event => {
+          const p = point(event);
+          if (drawing) {
+            const dx = p.x - drawing.start.x;
+            const dy = p.y - drawing.start.y;
+            if (Math.abs(dx) + Math.abs(dy) > 10) {
+              const style = styleDefaults[tool];
+              if (tool === "arrow") evidence.annotations.push({ id: crypto.randomUUID(), type: "arrow", x1: drawing.start.x, y1: drawing.start.y, x2: p.x, y2: p.y, color: style.color, size: style.size });
+              if (tool === "rect") evidence.annotations.push({ id: crypto.randomUUID(), type: "rect", x: Math.min(drawing.start.x, p.x), y: Math.min(drawing.start.y, p.y), width: Math.abs(dx), height: Math.abs(dy), color: style.color, size: style.size });
+              saveCases(tool === "arrow" ? "箭头已添加" : "框选已添加", item);
+              renderAnnotations();
+            }
+          }
+          if (dragging) { saveCases("标注位置已更新", item); renderAnnotations(); }
+          if (resizing) { saveCases(resizing.type === "rect" ? "框选范围已更新" : "箭头端点已更新", item); renderAnnotations(); }
+          drawing = null;
+          dragging = null;
+          resizing = null;
+          if (layer.hasPointerCapture(event.pointerId)) layer.releasePointerCapture(event.pointerId);
+        });
+
+        layer.addEventListener("keydown", event => {
+          const shortcut = event.ctrlKey || event.metaKey;
+          if (shortcut && event.key.toLowerCase() === "c" && selectedIds.size) {
+            event.preventDefault();
+            copySelected();
+            return;
+          }
+          if (shortcut && event.key.toLowerCase() === "v" && annotationClipboard.length) {
+            event.preventDefault();
+            pasteAnnotation();
+            return;
+          }
+          if ((event.key === "Delete" || event.key === "Backspace") && selectedIds.size) {
+            event.preventDefault();
+            deleteSelected();
+          }
+        });
+        board.addEventListener("dblclick", event => {
+          const target = event.target.closest(".annotation");
+          if (tool === "select" && target) {
+            selectedIds = new Set([target.dataset.id]);
+            renderAnnotations();
+            syncPropertyPanel();
+            if (selectedAnnotation()?.type === "text") { textInput.focus(); textInput.select(); }
+          }
+        });
+      }
+
+      function addCase() {
+        const selectedProject = document.querySelector("#projectFilter").value;
+        const item = { id: "case-" + crypto.randomUUID(), name: "t_new_verification_case", project: allowedProjects.includes(selectedProject) ? selectedProject : "HK1V11", tags: [], seed: "", status: "RUN", updated: formatDate(), goal: "填写此 Case 的验证目标。", observation: "记录当前观察结果。", checkpoint: "填写必须检查的信号、寄存器或协议事件。", evidences: [] };
+        cases.unshift(item);
+        activeCaseId = item.id;
+        saveCases("已创建新的验证记录");
+        render();
+        requestAnimationFrame(() => document.querySelector(`[data-case-id="${item.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      }
+
+      function applySearch() {
+        const query = document.querySelector("#searchInput").value.trim().toLowerCase();
+        const project = document.querySelector("#projectFilter").value;
+        let visible = 0;
+        list.querySelectorAll(".case-card").forEach(card => {
+          const item = getCase(card.dataset.caseId);
+          const matchesProject = project === "ALL" || item?.project === project;
+          const matchesQuery = !query || card.innerText.toLowerCase().includes(query);
+          const show = matchesProject && matchesQuery;
+          card.classList.toggle("is-hidden", !show);
+          if (show) visible += 1;
+        });
+        empty.hidden = visible !== 0;
+      }
+
+      document.querySelector("#searchInput").addEventListener("input", applySearch);
+      document.querySelector("#projectFilter").addEventListener("change", () => {
+        ensureActiveCase();
+        refreshNav();
+        applySearch();
+        updateSummary();
+      });
+      document.querySelector("#caseNav").addEventListener("click", event => {
+        const button = event.target.closest("[data-target]");
+        if (!button) return;
+        setActiveNav(button.dataset.target);
+        if (button.dataset.target === "overview") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+        activeCaseId = button.dataset.target;
+        const target = document.querySelector(`[data-case-id="${button.dataset.target}"]`);
+        if (target?.classList.contains("is-hidden")) {
+          document.querySelector("#searchInput").value = "";
+          applySearch();
+        }
+        document.querySelector(`[data-case-id="${button.dataset.target}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      document.querySelector("#themeButton").addEventListener("click", () => {
+        const root = document.documentElement;
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        localStorage.setItem("wavebook-theme", root.dataset.theme);
+      });
+      document.addEventListener("paste", event => {
+        if (READ_ONLY) return;
+        const clipboardImage = Array.from(event.clipboardData?.items || []).find(entry => entry.kind === "file" && entry.type.startsWith("image/"));
+        if (!clipboardImage) return;
+        const activeCase = getCase(activeCaseId) || cases.find(item => item.project === document.querySelector("#projectFilter").value) || cases[0];
+        if (!activeCase) { showToast("请先新建一条验证记录"); return; }
+        const file = clipboardImage.getAsFile();
+        if (!file) return;
+        event.preventDefault();
+        addWaveformFiles(activeCase, [file], `截图已添加到 ${activeCase.name}`);
+      });
+      document.querySelector("#exportPdfButton").addEventListener("click", () => {
+        const projectSelect = document.querySelector("#projectFilter");
+        const project = projectSelect.value;
+        if (project === "ALL") {
+          showToast("请先在顶部选择 HK1V11 或 HK5B66");
+          projectSelect.focus();
+          return;
+        }
+        const matchingCases = cases.filter(item => item.project === project);
+        if (!matchingCases.length) { showToast(`${project} 暂无可导出的 Case`); return; }
+        const previousTitle = document.title;
+        document.title = `${project}-数字验证报告`;
+        document.querySelector("#printTitle").textContent = `${project} 数字验证报告`;
+        document.querySelector("#printMeta").textContent = `${new Date().toLocaleDateString("zh-CN")} · ${matchingCases.length} 个 Case`;
+        renderPrintToc(matchingCases);
+        list.querySelectorAll(".case-card").forEach(card => {
+          const visible = getCase(card.dataset.caseId)?.project === project;
+          card.classList.toggle("print-hidden", !visible);
+          card.classList.toggle("print-visible", visible);
+        });
+        window.print();
+        document.title = previousTitle;
+        list.querySelectorAll(".case-card").forEach(card => card.classList.remove("print-hidden", "print-visible"));
+        applySearch();
+      });
+      document.querySelector("#backupButton").addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), cases }, null, 2)], { type: "application/json" });
+        const anchor = document.createElement("a");
+        anchor.href = URL.createObjectURL(blob);
+        anchor.download = "digital-verification-report-backup.json";
+        anchor.click();
+        URL.revokeObjectURL(anchor.href);
+        showToast("记录备份已导出");
+      });
+      const storedTheme = localStorage.getItem("wavebook-theme");
+      if (storedTheme) document.documentElement.dataset.theme = storedTheme;
+      render();
+    })();
+  </script>
+</body>
+</html>
