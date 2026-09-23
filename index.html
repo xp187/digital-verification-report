@@ -320,7 +320,7 @@
           <div class="case-meta"><span>Project: <code data-project-label></code></span><span>Seed: <code data-field="seed"></code></span><span>Last update: <time data-field="updated"></time></span></div>
           <div class="case-tags" data-case-tags aria-label="Case tags"></div>
         </div>
-        <div class="case-actions"><span class="tag project" data-project-label></span><span class="status-badge" data-status-label></span></div>
+        <div class="case-actions"><span class="tag project" data-project-badge></span><span class="status-badge" data-status-label></span></div>
       </header>
       <div class="case-body">
         <div class="detail-grid">
@@ -751,6 +751,7 @@
           else element.textContent = item[field] || "";
         });
         card.querySelector("[data-project-label]").textContent = item.project;
+        card.querySelector("[data-project-badge]").textContent = item.project;
         const status = card.querySelector("[data-status-label]");
         status.textContent = item.status;
         status.classList.add(statusClass(item.status));
