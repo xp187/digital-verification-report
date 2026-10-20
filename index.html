@@ -101,6 +101,10 @@
     .workspace { min-width: 0; }
     .topbar { min-height: 78px; padding: 15px 34px; background: color-mix(in srgb, var(--panel) 92%, transparent); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px; position: sticky; z-index: 20; top: 0; backdrop-filter: blur(12px); }
     .day-title { min-width: 260px; }
+    .day-title h1 { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+    .report-author { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border: 1px solid var(--blue); border-radius: 5px; background: var(--blue-soft); color: var(--blue-deep); white-space: nowrap; line-height: 1.4; }
+    .report-author > span { font-size: 12px; font-weight: 600; }
+    .report-author > strong { font-size: 19px; font-weight: 800; }
     .eyebrow { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
     h1 { font-size: 19px; margin: 3px 0 0; letter-spacing: 0; }
     .search { flex: 1; max-width: 460px; position: relative; }
@@ -390,7 +394,7 @@
 
     <main class="workspace">
       <header class="topbar">
-        <div class="day-title"><div class="eyebrow">Verification evidence book</div><h1>数字验证报告 · 2026-09-22 · 只读</h1><p class="report-author" style="margin:4px 0 0;font-size:13px;color:var(--muted)">作者：夏鹏</p></div>
+        <div class="day-title"><div class="eyebrow">Verification evidence book</div><h1>数字验证报告 · 2026-09-22 · 只读<span class="report-author"><span>作者</span><strong>夏鹏</strong></span></h1></div>
         <label class="search"><input id="searchInput" type="search" placeholder="搜索 Case、信号或说明" aria-label="搜索验证记录"></label>
         <div class="toolbar">
           
