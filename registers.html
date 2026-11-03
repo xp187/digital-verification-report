@@ -23,6 +23,8 @@
     header { background:var(--panel); border-bottom:1px solid var(--line); padding:20px 28px; display:flex; justify-content:space-between; gap:16px; align-items:center; }
     .eyebrow { color:var(--muted); font-size:11px; letter-spacing:.12em; font-weight:700; }
     h1 { margin:4px 0 0; font-size:23px; }
+    .source-meta { margin:5px 0 0; color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+    .source-meta strong { color:var(--ink); font-weight:600; }
     .head-actions { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
     .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:18px 28px 10px; }
     label { display:flex; align-items:center; gap:8px; font-size:13px; white-space:nowrap; }
@@ -87,7 +89,7 @@
 <meta name="author" content="夏鹏"></head>
 <body>
   <header>
-    <div><div class="eyebrow">DIGITAL VERIFICATION REPORT / HK1V11</div><h1>寄存器导航</h1></div>
+    <div><div class="eyebrow">DIGITAL VERIFICATION REPORT / HK1V11</div><h1>寄存器导航</h1><p class="source-meta">当前导航数据源：<strong id="sourceWorkbook">读取中…</strong></p></div>
     <div class="head-actions"><span>作者：夏鹏</span><a href="index.html" target="_blank" rel="noopener">打开验证报告 ↗</a><button id="theme" type="button">切换主题</button></div>
   </header>
   <div class="controls">
@@ -113,6 +115,7 @@
     (() => {
       "use strict";
       const data = JSON.parse(document.querySelector("#registerData").textContent);
+      document.querySelector("#sourceWorkbook").textContent = data.source;
       const $ = selector => document.querySelector(selector);
       let currentCases = new Map(data.cases.map(item => [item.id, item]));
       let storedAvailable = false;
