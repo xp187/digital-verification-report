@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_TESTO_SEL · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_TESTO_SEL · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-testo-sel.md" download="t_8b1lane_TESTO_SEL_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>R_TESTO_SEL 验证计划（真实SEL生效时检查对应源）</h1>
+<h2>1. 范围</h2>
+<p>SEL=00～3F，每组由CHPI真实写入后，保持其实际R_TESTO_SEL/MONISEL，再force该组源并检查digital_top的{TESTO_O4,TESTO_O3,TESTO_O2,TESTO_O1}。checker不force MONISEL或R_TESTO_SEL。TEST2=1、TESTO_EN_OPT=0、PWRC_TSEL=0、TEST_PRTCT=72、CTRLF_CHECKSUM=0101；TEST12保留EOL接线。</p>
+<h2>2. 逐组流程</h2>
+<p>每组先正常训练、LSP及CHPI CTRL_F；checker检查0x20 payload、0x30密码、有效R_TESTO_SEL与MONISEL。sender发完完整CTRL_F及K2/32个编码零数据packet后触发TX_READY。checker此时才force本组全部源为0、逐源为1再回0、最后全部为1；每步5ns后核对实际源及四路最终数字输出。只用固定映射和预定force值产生期望，不从DUT输出反推。完成后release全部源和辅助OE/HP/POFF控制，触发CHECKED。等待checker时sender继续发完整维护块；下一组开始前再发16个完整维护块，使probe后的延迟失锁先显现。若LOCK为低，采用已有driver的稳定重锁路径：持续发训练直到LOCK重新为高并保持4us；若保持高则直接LSP/配置。避免普通训练在“进入时LOCK高、发送4us过程中变低”时仍退出的竞态。</p>
+<p>全部123个去重后的非固定源位保留显式force0/force1/release。常量位必须保持0、同源重复位共享激励。只有实际源、最终输出和OE均正确的样本才累计0/1覆盖；真实CHPI配置和该组探针都正确才置完成位。5ms总超时报告卡住的SEL和已完成mask。</p>
+<p>SEL=01的LSI_PRTECT是0x20选择值的保护条件。RTL规定LSI_PRTECT=0时R_TESTO_SEL回退00，因此不能同时要求“选择仍是01”和“LSI_PRTECT=0传到TESTO4”。该位force0时专门核对选择回退00，release后核对恢复01；在01组保持LSI_PRTECT=1，检查TESTO4=1，其他三路分别检查0/1。此回退不算01组TESTO4的0覆盖；TESTO3对应BWDBL_PHY_RSTN。</p>
+<p>SEL=0E的LITEST和I_POFF_MODE同网，LITEST=1时OE期望为0，内部digital_top的TESTO四路数据仍需与源一致；不额外force POFF。其他组固定POFF=0、OE=1。MON_OUT_OE和HIGH_PEAKING_SEL1仅作输出路径条件控制，不force最终TESTO数据或最终OE。</p>
+<h2>3. RTL映射</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">SEL</th>
+<th>期望向量 <code>[3:0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">00</td>
+<td><code>{R_POL, R_FSYNC, RECK0, STB_IO}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">01</td>
+<td><code>{LSI_PRTECT, BWDBL_PHY_RSTN, N_RST_NLOCK, RECK0}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">02</td>
+<td><code>{K4_FIND, K3_FIND, K2_FIND, K1_FIND}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">03</td>
+<td><code>{1&amp;#x27;b0, SCREN_SYNC_K3, R_SCREN, 1&amp;#x27;b0}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">04</td>
+<td><code>{KEY_SHIFT_JUDGE1, KEY_SHIFT_JUDGE0, HSR_ACTIVE, 1&amp;#x27;b0}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">05</td>
+<td><code>{R_FSYNC, K3_FIND, K2_FIND, R_BKDU}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">06</td>
+<td><code>{K4_FIND, R_FSYNC, STB_B, STB_A}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">07</td>
+<td><code>{N_RST_PHY, TEST_EN, LOCK_FREQ, OSC_CLK}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">08</td>
+<td><code>{DATA_POINT_LAT[11], DATA_POINT_LAT[1], DATA_POINT_LAT[10], DATA_POINT_LAT[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">09</td>
+<td><code>{DATA_POINT_LAT[13], DATA_POINT_LAT[3], DATA_POINT_LAT[12], DATA_POINT_LAT[2]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">0A</td>
+<td><code>{DATA_POINT_LAT[15], DATA_POINT_LAT[5], DATA_POINT_LAT[14], DATA_POINT_LAT[4]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">0B</td>
+<td><code>{DATA_POINT_LAT[17], DATA_POINT_LAT[7], DATA_POINT_LAT[16], DATA_POINT_LAT[6]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">0C</td>
+<td><code>{DATA_POINT_LAT[19], DATA_POINT_LAT[9], DATA_POINT_LAT[18], DATA_POINT_LAT[8]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">0D</td>
+<td><code>{BWDL_TRIG, BWDA_TRIG, BWDB_TRIG, BWDBL_TRIG}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">0E</td>
+<td><code>{LITEST, LOCK_IN_RST_TRIG, UTC_ERR, UTC_FRM_ERR}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">0F</td>
+<td><code>{AUTO_EQ_PHY_RSTN, CDR_CRC_DET_RST_REQ, rx_vcom_detect, FRAME_WR_FLAG}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">10</td>
+<td><code>{UTC_FRM_CNT[4], UTC_CNT[2], UTC_CNT[1], UTC_CNT[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">11</td>
+<td><code>{UTC_FRM_CNT[3], UTC_FRM_CNT[2], UTC_FRM_CNT[1], UTC_FRM_CNT[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">12</td>
+<td><code>{HEADER_ERROR_LINE_CNT[3], HEADER_ERROR_LINE_CNT[2], HEADER_ERROR_LINE_CNT[1], HEADER_ERROR_LINE_CNT[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">13</td>
+<td><code>{1&amp;#x27;b0, HEADER_ERROR_FRAME_CNT[4], LONG01_ERROR_FRAME_CNT[5], LONG01_ERROR_FRAME_CNT[4]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">14</td>
+<td><code>{HEADER_ERROR_FRAME_CNT[3], HEADER_ERROR_FRAME_CNT[2], HEADER_ERROR_FRAME_CNT[1], HEADER_ERROR_FRAME_CNT[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">15</td>
+<td><code>{LONG01_ERROR_FRAME_CNT[3], LONG01_ERROR_FRAME_CNT[2], LONG01_ERROR_FRAME_CNT[1], LONG01_ERROR_FRAME_CNT[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">16</td>
+<td><code>{DRA_ACS_DATA, DRA_ACS_POL, DRA_CS, DRA_CHOP}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">17</td>
+<td><code>{DRD_XRST, DRD_XRST, LENB_R, LENB_L}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">18</td>
+<td><code>{SRA, SRB, SLA, SLB}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">19</td>
+<td><code>{FYSAR, FYSBR, FYSAL, FYSBL}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">1A</td>
+<td><code>{line_has_non0, zero_line_cnt[1], zero_line_cnt[0], two_zero_line}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">1B</td>
+<td><code>{1&amp;#x27;b0, de, cnt_flag, flag_det}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">1C</td>
+<td><code>{bus10_rdata[3], bus10_rdata[2], bus10_rdata[1], bus10_rdata[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">1D</td>
+<td><code>{bcc_in_data, bcc_receive_state[2], bcc_receive_state[1], bcc_receive_state[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">1E</td>
+<td><code>{bcc_out_data, bcc_cmd_state[2], bcc_cmd_state[1], bcc_cmd_state[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">1F</td>
+<td><code>{bcc_receive_valid, bcc_input_rise_edge, bcc_input_fall_edge, start_training}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">20</td>
+<td><code>{training_valid, rx_vcom_detect, training_result, AUTO_EQ_PERIOD}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">21</td>
+<td><code>{reg_lane_ctrl[3], reg_lane_ctrl[2], reg_lane_ctrl[1], reg_lane_ctrl[0]}</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">22～3F</td>
+<td>默认组：<code>{R_POL, R_FSYNC, RECK0, STB_IO}</code></td>
+</tr>
+</tbody>
+</table>
+<p>RECK0为LC_MONBLOCK内部DCLK_DIV[3]；BWDBL_TRIG作为实际MUX源独立force。SEL16及SEL0F按用户提供的新版RTL截图，本地旧DUT不修改。</p>
+<h2>4. 交付和验证</h2>
+<p>FRAME_NUM=1、DV=0仅满足公共静态数组，实际无视频帧、PPM、Cmodel或ctrl_l_line_cfg.txt。提供同步的Python3.9独立安装器；校对代码、映射、force/release及握手，隔离目录重复安装。完整SV/UVM编译、真实force及每组失锁恢复需新版服务器RTL仿真确认。SEL01的0值验证RTL保护回退，不宣称01组MUX的LSI_PRTECT低电平透传。</p></main></body></html>

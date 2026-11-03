@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_UTC_HEADER_CNT · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_UTC_HEADER_CNT · 验证计划附件</h1>
+<p class="source">来源：20261027 工程中的原始计划。</p>
+<a class="button" href="hk1v11-t-8b1lane-utc-header-cnt.md" download="t_8b1lane_UTC_HEADER_CNT_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><p>﻿# UTC_header_cnt[1:0] 验证计划</p>
+<h2>1. 目标与范围</h2>
+<p>验证寄存器 <code>0x38[3:2] UTC_header_cnt[1:0]</code> 对长编码（420b/413b）模式下 header 连续错误行级门限的控制作用。通过正常寄存器配置与 CHPI 长编码输入，在每行构造指定数量的 header 错误，确认错误计数在正确门限触发，并在新行开始后清零。</p>
+<p>本计划只验证 <code>UTC_header_cnt[1:0]</code>。<code>UTC_header_frame</code> 和 <code>UTC_long01_frame</code> 固定为较宽松门限，避免它们的帧级错误干扰行级结果；其他协议、模拟输出和图像数值不作为判据。</p>
+<h2>2. 行为依据</h2>
+<p>寄存器表将该字段描述为“413b420b UTC header continuous error（仅在 DE 区）”。根据当前 RTL，门限由字段值映射如下：</p>
+<table>
+<thead>
+<tr>
+<th><code>UTC_header_cnt[1:0]</code></th>
+<th style="text-align: right;">行内错误门限 T</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2&amp;#x27;b00</code></td>
+<td style="text-align: right;">2 次</td>
+</tr>
+<tr>
+<td><code>2&amp;#x27;b01</code></td>
+<td style="text-align: right;">4 次</td>
+</tr>
+<tr>
+<td><code>2&amp;#x27;b10</code></td>
+<td style="text-align: right;">6 次</td>
+</tr>
+<tr>
+<td><code>2&amp;#x27;b11</code></td>
+<td style="text-align: right;">8 次</td>
+</tr>
+</tbody>
+</table>
+<p>RTL 的 header 错误事件条件是：当前 420b block header 的 bit 0 与前一个 block 末尾 bit 相同。每个满足条件的 block 边界计一次。达到 T 后，<code>HEADER_ERROR_LINE</code> 拉高。上层 <code>UTC_ERR</code> 同时包含 header tag mismatch 错误，所以激励必须保持 tag 合法且连续一致，以隔离本字段的效果。</p>
+<p>门限表按用户指定以 RTL 为准。寄存器表未列出四种编码对应的数值。</p>
+<h2>3. Case 结构</h2>
+<ul>
+<li>Case 名：<code>t_8b1lane_UTC_HEADER_CNT</code></li>
+<li>单一 test，使用标准长编码发送与配置提交流程。</li>
+<li><code>frame_num = 4</code>，每帧对应一种 <code>UTC_header_cnt</code> 编码，按 <code>00 → 01 → 10 → 11</code> 顺序运行。</li>
+<li>每个配置帧保持项目现有的 VBP、VFP 和行周期设置，不压缩帧间隔。</li>
+<li>每帧使用相同的 16 条 active line 图像输入；前三条 active line 分别用于 T-1 边界、T 触发边界、K1 后清零检查，其余行发送无错误数据。</li>
+<li>通过正常 CTRL_F/寄存器序列提交配置；确认配置生效后才对该帧的数据结果做判定。</li>
+<li>长编码输入使用 <code>SCREN=0</code>，并确保 RTL 侧 <code>TEST_UTC_ENA=1</code>；保持稳定、非保留的 6-bit header tag，payload 避免产生 <code>7&amp;#x27;h00</code>/<code>7&amp;#x27;h7f</code>，header tag 在块间一致。</li>
+</ul>
+<h2>4. 错误注入方式</h2>
+<p>使用 case 专用的发送 sequence/helper，在现有 <code>isptx_sequence</code> 的长编码路径上生成标准有效 active-line 数据。完成 413b→420b 编码后，仅修改指定 420b block 的 header toggle bit：把该 bit 设置成前一个 block 的末尾 bit，构造一个 header 错误事件。错误块之间保持其余 header/tag/payload、编码长度、K1/K2 和行时序有效。</p>
+<p>每条目标行在 K1 后先发送一个正常 block 作为前一块末尾 bit 的建立数据；随后按该行目标数，选择后续 block 的 header toggle bit 注入错误。其余 block 使用正常交替 toggle。这样每条目标行的错误数可精确控制为 <code>T-1</code>、<code>T</code> 或 <code>0</code>。</p>
+<p>注入后仍通过现有 20-bit packet driver 发送编码流；每个 420b block 长度及 20-bit packet 对齐保持不变。不得通过 force RTL 错误计数或错误标志来制造结果。</p>
+<h2>5. 四种编码的逐帧激励与期望</h2>
+<p>每帧前三条 active line 如下。每条新行由 K1 开始，并检查行计数器是否按行边界重新开始。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">帧</th>
+<th>配置值</th>
+<th style="text-align: right;">门限 T</th>
+<th>Active line 0：T-1 个错误</th>
+<th>Active line 1：T 个错误</th>
+<th>Active line 2：0 个错误</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td><code>00</code></td>
+<td style="text-align: right;">2</td>
+<td>1 次后不报错</td>
+<td>第 2 次错误触发</td>
+<td>K1 清零期望需检查（见 RTL 风险）</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td><code>01</code></td>
+<td style="text-align: right;">4</td>
+<td>3 次后不报错</td>
+<td>第 4 次错误触发</td>
+<td>K1 清零期望需检查（见 RTL 风险）</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td><code>10</code></td>
+<td style="text-align: right;">6</td>
+<td>5 次后不报错</td>
+<td>第 6 次错误触发</td>
+<td>K1 清零期望需检查（见 RTL 风险）</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td><code>11</code></td>
+<td style="text-align: right;">8</td>
+<td>7 次后不报错</td>
+<td>第 8 次错误触发</td>
+<td>K1 清零期望需检查（见 RTL 风险）</td>
+</tr>
+</tbody>
+</table>
+<p>每个 T 行在第 T-1 个错误之后仍须保持 <code>HEADER_ERROR_LINE=0</code>、<code>UTC_ERR=0</code>；第 T 个错误被接收后须拉高。下一行 K1 后检查行计数及错误标志是否清零，这是行级门限的边界检查。当前 RTL 在 <code>HEADER_ERROR_LINE=1</code> 时优先保持计数，K1/K4 清零分支不会执行；若波形确认仍保持，则记录为 RTL 与逐行清零预期的差异，不能把“继续保持”当作 checker 的期望通过结果。其余 active line 不注入错误。</p>
+<p>每帧累计 header 错误最多为 <code>(T-1)+T</code>，最大 15。固定 <code>UTC_header_frame=3&amp;#x27;b111</code>（RTL 门限 24），固定 <code>UTC_long01_frame=2&amp;#x27;b11</code>（RTL 门限 32），并保持 payload 不含 <code>00/7f</code>，使 <code>UTC_FRM_ERR</code> 在本测试中保持 0。</p>
+<h2>6. DE 区域限定检查</h2>
+<p>寄存器表注明该错误只在 DE 区检测。首版 case 暂不执行 VBP 负向注入：现有长编码发送流程没有独立 reset/retrain 子运行入口，而触发后的行计数在当前 RTL 中可能保持；把 VBP 样本并入四档 sweep 会污染后续门限结果。该点作为后续扩展项保留，不计入本版 PASS 条件。</p>
+<p>当前错误控制模块没有显式 DE 输入端口，检查路径使用解码器送来的有效 raw data。后续隔离运行需确认 VBP 注入是否被上游有效数据路径排除；若 VBP 错误被计入并触发，记录为“仅在 DE 区”规格与当前 RTL 数据限定行为不一致，不能通过放宽 checker 处理。</p>
+<h2>7. Checker 检查点</h2>
+<p>Checker 保持精简，仅按当前帧/行的计划错误数比较配置及结果：</p>
+<ol>
+<li>配置检查：当前 <code>UTC_header_cnt[1:0]</code> 等于该帧计划值，且 <code>TEST_UTC_ENA=1</code>。</li>
+<li>行计数检查：在每条目标行发送完成后比较 <code>HEADER_ERROR_LINE_CNT</code>；T-1 行期望为 T-1，T 行期望达到 T，下一条无错误行期望在 K1 后清零。</li>
+<li>主功能检查：T-1 阶段 <code>HEADER_ERROR_LINE=0</code> 且 <code>UTC_ERR=0</code>；第 T 个错误之后两者置 1；下一 K1 后检查是否按行边界恢复为 0。</li>
+<li>隔离检查：<code>HEADER_MISMATCH_ERROR=0</code>，<code>UTC_FRM_ERR=0</code>；发现任何意外 tag mismatch、帧级错误、X/Z 或有效样本缺失均报错。</li>
+<li>结果不依赖单纯等待或固定延时判 PASS；每个配置值必须实际观察到 T-1、T 和 K1 边界检查三个阶段。K1 清零与否按规格期望检查；当前 RTL 可能不满足，作为明确失败/待设计确认项。</li>
+</ol>
+<p>Case checker 直接采样 long decoder 的层次状态和 <code>LC_CHPI_DECODE.UTC_ERR/UTC_FRM_ERR</code>，检查 <code>UTC_HEADER_CNT</code>、<code>HEADER_ERROR_LINE_CNT</code>、<code>HEADER_ERROR_LINE</code>、<code>UTC_ERR</code>、<code>HEADER_MISMATCH_ERROR</code> 和 <code>UTC_FRM_ERR</code>。MONI <code>0x12</code> 的低 4 bit 及 MONI <code>0x0E</code> 的 bit 1/bit 0 保留为波形交叉核对点。</p>
+<h2>8. 预计波形信号</h2>
+<ul>
+<li>配置：<code>UTC_header_cnt[1:0]</code>、<code>UTC_header_frame[2:0]</code>、<code>UTC_long01_frame[1:0]</code></li>
+<li>输入/边界：长编码 <code>K1_FIND</code>、<code>K4_FIND</code>、DE 区间、解码有效数据</li>
+<li>计数和判定：<code>HEADER_ERROR_LINE_CNT</code>、<code>HEADER_ERROR_LINE</code>、<code>HEADER_MISMATCH_ERROR</code>、<code>HEADER_ERROR_FRAME_CNT</code>、<code>HEADER_ERROR_FRAME</code>、<code>LONG01_ERROR_FRAME_CNT</code>、<code>LONG01_ERROR_FRAME</code></li>
+<li>对外结果：<code>UTC_ERR</code>、<code>UTC_FRM_ERR</code></li>
+</ul>
+<h2>9. 预计 case 文件</h2>
+<p>本目录实现文件：</p>
+<ul>
+<li><code>t_8b1lane_UTC_HEADER_CNT.sv</code>：case 主体及标准配置/发送 sequence 启动</li>
+<li><code>utc_header_cnt_checker.sv</code>：上述配置、门限、清零和 DE 限定检查</li>
+<li><code>t_8b1lane_UTC_HEADER_CNT.sv</code>：case、派生 TX sequence、active-line header 注入和常量像素流</li>
+<li><code>utc_header_cnt_checker.sv</code>：门限/状态检查</li>
+<li><code>cfg_frame0.txt</code> 至 <code>cfg_frame4.txt</code>：四档寄存器值及最后一帧后的保持配置</li>
+<li><code>user_def.sv</code>、<code>waves_dumper.sv</code>、<code>test.f</code>、<code>test_lib.sv</code>、<code>README.md</code></li>
+<li>case 不需要 PPM 文件；派生 sequence 直接构造固定像素队列，不调用 C-model golden 图像流程</li>
+<li><code>regression/testname.f</code>：加入单条 case 登记</li>
+</ul>
+<p>后续按项目约定把 case 加入 <code>regression/testname.f</code>。本次仅创建验证计划，不创建上述代码或图像文件，不修改 <code>env_cfg.sv</code>、共享 sequence、RTL 或回归清单。</p>
+<h2>10. 通过标准</h2>
+<ul>
+<li>四种配置值均实际写入且被 DUT 接收。</li>
+<li>对每种值，T-1 个 header 错误不触发，恰好第 T 个触发。</li>
+<li>K1 后按逐行门限预期检查计数及 <code>UTC_ERR</code> 清除；若 RTL 保持，报告为已定位的边界差异。未达到门限的行在 K1 后必须清零。</li>
+<li>被测帧内 <code>UTC_FRM_ERR</code> 保持为 0，header tag mismatch 保持为 0。</li>
+<li>VBP 的 DE-only 负向样本不在本版执行，不作为 PASS 条件。</li>
+<li>每个阶段均有有效输入及有效观察样本；缺样或未触发不计为 PASS。</li>
+</ul>
+<h2>11. RTL 风险与验证限制</h2>
+<ul>
+<li>当前 <code>LONG_ENCODING_ERROR_CTRL.v</code> 中 <code>HEADER_ERROR_LINE_CNT</code> 的时序分支先判断 <code>HEADER_ERROR_LINE</code>，再判断 K1/K4/UTC disable。计数达到门限后，flag 拉高会挡住后续清零分支；即使新行开始，计数也可能保持在门限值，<code>UTC_ERR</code> 随之保持。计划会检查此边界并将与逐行清零预期的差异明确报告，不通过修改 checker 期望来掩盖。<code>HEADER_ERROR_FRAME_CNT</code> 有相同的优先级结构，应避免把它当作本字段行级判据。</li>
+<li>当前非 FPGA 仿真中，模拟宏模型的 <code>UTC_ENB_I</code> 输出无驱动；Case 将 <code>chip_tb_top.u_HK1V11.UTC_ENB_I</code> 固定为 0，启用 long UTC detector。为在同一仿真中继续观察四档阈值，仅将 <code>LINK_FAULT_CTRL.UTC_RST_REQ</code> 固定为 0，抑制错误后的复位请求；不 force 检测计数器或状态标志。</li>
+<li>VBP 负向激励需独立 reset/retrain 后运行，当前版本未实现该隔离子运行。</li>
+<li>本文件是实现前计划，尚未运行 SV/UVM 编译、仿真或波形检查。四档门限按用户指定以当前 RTL 映射为准；DE 区限定仍需实际负向样本确认。</li>
+</ul></main></body></html>

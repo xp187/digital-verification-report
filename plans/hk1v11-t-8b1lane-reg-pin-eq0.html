@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_reg_pin_eq0 · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_reg_pin_eq0 · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-reg-pin-eq0.md" download="t_8b1lane_reg_pin_eq0_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1><code>reg_pin_eq=0</code> EQ 引脚模式验证计划</h1>
+<h2>验证目标</h2>
+<p>在 <code>AUTO_EQ_EN=0</code>、<code>EQ_MODE=0</code>、<code>reg_pin_eq=0</code> 时，确认数字输出 <code>reg_lane_ctrl[4:0]</code> 由外部 <code>EQ[2:0]</code> 引脚译码产生，并且不受软件配置 <code>sw_reg_lane_ctrl[4:0]</code> 影响。</p>
+<h2>前置条件与激励</h2>
+<ul>
+<li>全程保持 <code>AUTO_EQ_EN=0</code>、<code>EQ_MODE=0</code>。TB 使用默认值为 0 的 <code>aeq_pin</code>、<code>eq_mode_pin</code> 通过连续赋值驱动 <code>eq_pad</code>、<code>eq_mode_pad</code>、<code>aeq_pad</code> 三个wire网络，连接芯片封装层inout引脚；case 通过 <code>chip_tb_top.eq_pin[2:0]</code> 设置 EQ 输入，无需 force。单颗及 MULTI_CHIP 的四颗实例共用这三个变量。</li>
+<li>每帧通过 CHPI 将 <code>reg_pin_eq</code>（<code>0x33[7]</code>）写为 0。</li>
+<li>共 8 帧，<code>EQ[2:0]</code> 从 <code>000</code> 遍历到 <code>111</code>。软件 <code>sw_reg_lane_ctrl[4:0]</code> 在 <code>00000</code> 和 <code>11111</code> 间交替，确认 pin 模式下输出不跟随软件值。</li>
+<li>每个观察帧的 <code>VS_O</code> 上升沿设置对应 EQ 输入，等待 <code>1ns</code> 后采样，并保持到下一观察帧。首个有效 <code>VS_O</code> 与初始 <code>CTRL_F</code> 配置的对应关系需在目标仿真中确认。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">帧</th>
+<th style="text-align: right;"><code>EQ[2:0]</code> 引脚值</th>
+<th style="text-align: right;"><code>sw_reg_lane_ctrl[4:0]</code></th>
+<th><code>reg_lane_ctrl[4:0]</code> 期望值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"><code>000</code></td>
+<td style="text-align: right;"><code>00000</code></td>
+<td><code>00010</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><code>001</code></td>
+<td style="text-align: right;"><code>11111</code></td>
+<td><code>10100</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"><code>010</code></td>
+<td style="text-align: right;"><code>00000</code></td>
+<td><code>01011</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"><code>011</code></td>
+<td style="text-align: right;"><code>11111</code></td>
+<td><code>10111</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"><code>100</code></td>
+<td style="text-align: right;"><code>00000</code></td>
+<td><code>00010</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"><code>101</code></td>
+<td style="text-align: right;"><code>11111</code></td>
+<td><code>10100</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;"><code>110</code></td>
+<td style="text-align: right;"><code>00000</code></td>
+<td><code>01011</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;"><code>111</code></td>
+<td style="text-align: right;"><code>11111</code></td>
+<td><code>10111</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Checker 与通过条件</h2>
+<p>每个观察点只比较一次五位信号：<code>chip_tb_top.u_HK1V11.u_HK1V11_digital_top.u_LOGIC_CENTER.reg_lane_ctrl[4:0]</code> 与固定期望表。失配时报告帧号、EQ 输入、实际值和期望值。8 种 EQ 输入均采样且比较通过，即本 case 通过。</p>
+<h2>期望值依据</h2>
+<p>用户已确认以当前 RTL 为准。以上固定期望表依据 <code>cmodel/test/HV2A31/HK1V11_digital_top/seperated_code/LC_REG_MAPPING.v</code> 的译码，已经考虑 <code>{EQ[0], EQ[1], EQ[2]}</code> 与外部 <code>EQ[2:0]</code> 的位序关系；运行时直接比较固定常量，不反读 DUT 内部译码结果。寄存器资料中的位宽与编码差异作为已知文档差异保留。</p>
+<p>现有配置中的 <code>CTRLF_CHECKSUM=0101</code> 用于关闭三帧 checksum 等待。本 case 不检查错误 checksum 拒绝或 checksum 保护功能。</p>
+<h2>不在本 case 范围内</h2>
+<p>不检查 <code>reg_pin_eq=1</code>、<code>EQ_MODE=1</code>、自动 EQ 行为或错误 checksum 处理。</p>
+<h2>实现与交付</h2>
+<ul>
+<li><code>t_8b1lane_reg_pin_eq0.sv</code>：test/vseq，复用基础发帧，显式并行启动发送与checker，并等待两者结束。</li>
+<li><code>eq_pin_checker.sv</code>：8次循环、固定期望表和一次五位严格比较；逐帧报告PASS或失配信息。</li>
+<li><code>cfg_frame0.txt</code>至<code>cfg_frame7.txt</code>：上述8帧软件值配置；<code>cfg_frame8.txt</code>重复末帧，供发送流程使用。</li>
+<li><code>user_def.sv</code>：单lane、12 ports、3840×16、8帧。通用数据/数字/模拟/chopper scoreboard关闭，本case只判断EQ控制输出。</li>
+<li>独立生成器 <code>generate_t_8b1lane_reg_pin_eq0_inout_fix.py</code>：兼容Python 3.9，可从工程根目录或tests目录运行，也支持<code>--dv-top</code>。生成case、连接TB变量并登记回归；不生成PPM或<code>ctrl_l_line_cfg.txt</code>。</li>
+</ul>
+<p>已完成代码与安装脚本生成；完整DUT编译和仿真待目标环境运行。</p></main></body></html>

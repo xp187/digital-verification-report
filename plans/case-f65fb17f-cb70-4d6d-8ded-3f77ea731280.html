@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_REG_PASSTHRU · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_REG_PASSTHRU · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="case-f65fb17f-cb70-4d6d-8ded-3f77ea731280.md" download="t_8b1lane_REG_PASSTHRU_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>t_8b1lane_REG_PASSTHRU 验证计划</h1>
+<h2>1. 目的</h2>
+<p>验证 0x90~0x93 页（reg144~147）的数字直出寄存器：I2C 写入后，数字顶层输出正确跟随；
+锁保护（LSI_PRTECT）未解锁时写入被屏蔽、输出保持默认值。</p>
+<p>RTL 依据：<code>cmodel/test/HV2A31/HDL/HK1V11_digital_top/seperated_code/LC_CPUWR.v</code>（L532-581、L546）。
+全部 7 个寄存器均为配置/支持信号：输出 = <code>LSI_PRTECT ? 存储值 : 默认值</code>，数字内无功能运算。
+BCC_M 亦同——仅作为 BCC 解码器的手动模式半比特时长参数（boe_rx_bcc_decoder.v:266，
+拼接 + mux 选择），不改变面板可见行为；与其余寄存器判据相同，仅观测点在数字内部。</p>
+<h2>2. 被测寄存器与观测点</h2>
+<table>
+<thead>
+<tr>
+<th>寄存器</th>
+<th>位</th>
+<th>RTL 复位默认</th>
+<th>观测点（LOGIC_CENTER 输出）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>reg_fast_lock_rlpf</td>
+<td>0x90[7:4]</td>
+<td>4&#x27;b0110</td>
+<td><code>reg_fast_lock_rlpf[3:0]</code></td>
+</tr>
+<tr>
+<td>reg_fast_lock_icp</td>
+<td>0x90[3:0]</td>
+<td>4&#x27;b1000</td>
+<td><code>reg_fast_lock_icp[3:0]</code></td>
+</tr>
+<tr>
+<td>reg_fine_lock_rlpf</td>
+<td>0x91[7:4]</td>
+<td>4&#x27;b0011</td>
+<td><code>reg_fine_lock_rlpf[3:0]</code></td>
+</tr>
+<tr>
+<td>reg_fine_lock_icp</td>
+<td>0x91[3:0]</td>
+<td>4&#x27;b1100</td>
+<td><code>reg_fine_lock_icp[3:0]</code></td>
+</tr>
+<tr>
+<td>reg_lock_wd_sel</td>
+<td>0x92[1:0]</td>
+<td>2&#x27;b10</td>
+<td><code>reg_lock_wd_sel[1:0]</code></td>
+</tr>
+<tr>
+<td>FSEL</td>
+<td>0x92[4:3]</td>
+<td>2&#x27;b00</td>
+<td><code>FSEL[1:0]</code>（已连至 MACRO_TOP_1V11，数字侧观测 top 端口）</td>
+</tr>
+<tr>
+<td>BCC_M</td>
+<td>0x93[3:0]</td>
+<td>4&#x27;b0010</td>
+<td><code>BCC_M[3:0]</code>；附加观测 bcc_ctrl 内部 <code>boe_bcc_prescale_low_high_delta</code>（M_BCC=1 时 = {2&#x27;b0,BCC_M}）</td>
+</tr>
+</tbody>
+</table>
+<p>层次前缀：<code>chip_tb_top.u_HK1V11.u_HK1V11_digital_top.u_LOGIC_CENTER.</code>（bcc_ctrl 例化名实现时确认）。</p>
+<h2>3. 激励设计（无图像序列，纯寄存器级，参照 t_reg_i2c_unlock_rst）</h2>
+<ul>
+<li><strong>不跑帧、不训练</strong>：vseq 为空。参照 <code>tests/t_reg_i2c_unlock_rst/t_reg_i2c_unlock_rst.sv</code>
+  的成熟做法，全部流程放在 test 的 reset_phase 中（<code>#100us</code> 起步，复位释放后执行）。</li>
+<li><strong>I2C 接口（现成）</strong>：
+  <code>systemverilog
+  `define I2C chip_tb_top.u_i2c_model_sim
+  `I2C.i2c_write_single(.devid(7&amp;#x27;h70), .address(8&amp;#x27;h90), .data(wdata));
+  `I2C.i2c_read_single(.devid(7&amp;#x27;h70), .address(8&amp;#x27;h90), .rdata(rdata));</code>
+  0x90~0x92 不在 CHPI CTRL_F 0x00~0x3B 载荷内（见 t_8b1lane_DIRECT_OUT README），
+  I2C 是唯一写入路径。</li>
+<li><strong>解锁两步（照抄先例）</strong>：<code>devid 7&amp;#x27;h62</code> 写 F0=0x5A/F1=0xA5（I2C 使能），再
+  <code>devid 7&amp;#x27;h70</code> 写 0x30=0x72（TEST_PRTCT）。</li>
+<li>写入值：各寄存器复位默认值取反——0x90←0x97、0x91←0xC3、0x92←0x19、0x93←0x0D；
+  可选回写默认值做第二组（0x90←0x68、0x91←0x3C、0x92←0x02、0x93←0x02）。</li>
+<li>流程：</li>
+<li>层次读 7 个输出 = 复位默认值</li>
+<li>未解锁写取反值 → 输出仍为默认值（锁定屏蔽）</li>
+<li>两步解锁，层次确认 <code>LSI_PRTECT=1</code></li>
+<li>逐个写取反值，等待 ~10us 稳定窗，层次读输出比对；I2C 读回 = 写入值</li>
+<li>（可选，借先例手段）<code>force chip_tb_top.u_HK1V11.cr_done_lane = 0</code> 后读输出，
+     确认 0x90~0x93 在失锁域的行为（回默认或保持）与 RTL 一致，随后 release</li>
+</ul>
+<h2>4. 判据（全部零 golden RTL，只查跟随关系）</h2>
+<ol>
+<li><strong>默认值判据</strong>：起始 7 个输出 = 复位默认值。期望字节已按
+   HK1V11_Register_20251021 spec 定案（与 RTL 全部一致）：0x90=8&#x27;h68、0x91=8&#x27;h3C、
+   0x92=8&#x27;h02、0x93=8&#x27;h02。此前据旧截图记录的&quot;三处默认值分歧&quot;系版本对照错误，撤销。</li>
+<li><strong>锁定屏蔽判据</strong>：未解锁写取反值后，输出仍为默认值。</li>
+<li><strong>跟随判据（主判据）</strong>：解锁后写取反值，稳定窗内输出 = 写入值；I2C 读回一致。</li>
+<li><strong>BCC_M 附加观测</strong>：顶层 <code>BCC_M[3:0]</code> 同判据 3；若配置下 M_BCC=1，附加检查
+   <code>boe_bcc_prescale_low_high_delta = {2&amp;#x27;b0, BCC_M}</code>。M_BCC 模式切换归 BCC 专项 case。</li>
+<li><strong>cr_done 失锁判据（可选）</strong>：force cr_done_lane=0 后 0x90~0x93 输出的行为
+   （回默认/保持）符合 RTL 复位域归属。</li>
+</ol>
+<h2>5. 风险与回退</h2>
+<ul>
+<li><strong>N_RST_NLOCK 域风险（已被先例大幅降低）</strong>：t_reg_i2c_unlock_rst 已在 reset_phase
+  内不跑帧完成全地址段 I2C 读写，写路径有效性有保证。残余风险仅剩 0x90~0x93 输出
+  端口在本环境层次下是否可见（编译期即暴露）。</li>
+<li><strong>回退</strong>：若判据 2/3 同时失败，改在 force cr_done_lane=1（模拟已锁定）后重复流程。</li>
+</ul>
+<h2>6. 非目标</h2>
+<ul>
+<li>不验模拟端真实行为（OSC 频率、CDR 带宽变化）——只验数字透传</li>
+<li>不验 0x50/0x51 的 regr_* 回读监控寄存器（它们是状态回读，无写路径）</li>
+<li>不跑图像帧，不验 CHPI/图像功能</li>
+<li>不覆盖 VU440_FPGA 分支（该分支下 FSEL 悬空，属 FPGA 适配问题）</li>
+</ul>
+<h2>7. 完成条件</h2>
+<ul>
+<li>判据 1~3 全部通过，判据 4 顶层跟随通过，零 UVM_ERROR</li>
+<li>每个寄存器 ≥1 组取反值采样（可选回写默认值则 ≥2 组）</li>
+</ul>
+<h2>8. 待确认项</h2>
+<ol>
+<li>bcc_ctrl 在 LINK_PANEL_CTRL 内的例化名，及 M_BCC 是否为 1（判据 4 附加观测用）</li>
+<li>0x92 bit[2] spec 名为 reg_pbs_fit，数字 RTL 无此信号（未实现或不归数字）——
+   本 case 该位保持 0 不覆盖，仅记录</li>
+</ol></main></body></html>

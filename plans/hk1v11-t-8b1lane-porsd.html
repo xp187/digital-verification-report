@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_PORSD · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_PORSD · 验证计划附件</h1>
+<p class="source">来源：1012 工程的历史计划。此计划是参考资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-porsd.md" download="t_8b1lane_PORSD_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>PORSD 验证计划</h1>
+<h2>目标</h2>
+<p>验证 <code>0x01[5] PORSD</code> 的 Source Driver 复位与恢复：<code>0</code> 为复位模式，规格要求 SD 输出短接 VCOM；<code>1</code> 为正常模式。数字侧重点检查复位时的输出控制及恢复后的正常输出。实际模拟输出是否短接 VCOM，只有模拟模型可观测时才能进一步确认，不能仅凭数字控制信号宣称通过。</p>
+<p>依据：寄存器说明；当前 RTL <code>LC_CPUWR.v:312,892-963</code>、<code>ANCTL.v:136-165,183-189</code>。<code>PORSD</code> 上电默认 0，复位域为 <code>RSTN</code>。旧 <code>t_8b1lane_PORSD0</code> 八个数据帧均写 0，没有专用功能 checker，仅作为单 lane case 配置参考。</p>
+<h2>激励配置</h2>
+<p>新 case 使用 8 个数据帧、每帧 16 条活动行，保持其他时序及输出配置不变，<code>TEST_PRTCT=0x72</code>。<code>PORSD</code> 按配置帧设置为 <code>0,0,1,1,0,0,1,1</code>；前两档确认复位，中间与末尾分别验证释放、重新复位、再次恢复。结束保护配置继续写 1。</p>
+<p>每帧显式设置 <code>CTRLF_CHECKSUM=0101</code>：当前 RTL 在低四位为 <code>4&amp;#x27;h5</code> 时关闭 <code>chksum_mode</code>，使 <code>0x01[5]</code> 直接随配置写入，避免 checksum 的 shadow/延迟装载改变本 case 的逐帧预期。保持 <code>XON=1</code>、<code>POFF_DRA_AMP=0</code>，关闭会额外拉高 <code>CS_VCOM</code> 的 VPS 模式；每档只在配置稳定的活动行取样。配置帧编号与图像帧的对应关系以实际发送的 <code>K4+CTRL_F</code> 为准。</p>
+<h2>检查点</h2>
+<ol>
+<li>在 <code>K4+CTRL_F</code> 写入后建立该档期望值；进入随后的稳定活动行时，先检查 <code>R_PORSD</code> 等于该期望值，再检查输出。寄存器可能在前一图像帧的 VBP 阶段已更新，不按图像帧号推断其旧值；也不能只按实际 <code>R_PORSD</code> 分支，否则写入未生效会漏报。</li>
+<li><code>PORSD=0</code>：<code>HIZ_SRC1/2=1</code>、<code>HSR_DRA=0</code>、<code>DRA_CS=1</code>、<code>CS_VCOM=1</code>；<code>POL1A/B</code> 至 <code>POL4A/B</code> 均为 0。上述期望以 <code>POFF_DRA_AMP=0</code> 为前提。复位档不做正常像素输出比较。</li>
+<li><code>PORSD=1</code>：在 <code>XON=1</code> 且 VPS 已关闭时检查 <code>CS_VCOM=0</code>。当 <code>CS_START=0</code> 且对应的 <code>HIZ_NRM1/2=0</code> 时，检查该组 <code>HIZ_SRC1/2=0</code> 和对应 POL A/B 互补；两组 Hi-Z 路径都要取得有效样本。不能要求 <code>DRA_CS</code> 或 <code>HSR_DRA</code> 在所有正常周期恒为固定值。</li>
+<li>复位和正常档均须取得稳定活动行样本；正常档两组 Hi-Z 路径均须覆盖。任一档没有样本、预期 <code>R_PORSD</code> 不符或输出控制不符即失败。checker 只保留预期档位、条件判断、样本数和错误数，不复制通用数据 scoreboard。</li>
+</ol>
+<h2>实现与验证边界</h2>
+<p>本 case 开启 data_merge、digital、analog 三个 checker。analog 从首个 <code>dm_VS</code> 启动，采集 SIM_OUT 时同步记录实际 <code>R_PORSD</code>；PORSD=0 时检查有效通道的完整 10-bit 值为 <code>10&amp;#x27;h088</code>，PORSD=1 时沿用正常比较。pixel 按行保存 PORSD，保留行帧计数和队列清理，避免帧末 CTRL_F 更新造成误判。独立 PORSD checker 继续检查计划值与实际寄存器及控制输出。</p>
+<p>实现时优先观察 <code>ANCTL</code> 现有信号和顶层对应输出；服务器实际 RTL 层级须在编译前核对。先用固定 0/1 激励验证 checker 正例，再故意翻转一项预期控制信号做反例，之后运行完整 DUT 仿真。若模拟模型提供 SD 输出与 VCOM 电位，再加模拟侧短接检查；没有该模型时，结论限定为数字控制正确。</p>
+<h2>实现状态</h2>
+<p>已生成 <code>t_8b1lane_PORSD.sv</code>、<code>porsd_checker.sv</code>、<code>cfg_frame0..8.txt</code> 及 case 配置文件，并登记到 <code>regression/testname.f</code>。未生成或复制 PPM；当前工程副本也没有 <code>tests/t_8b1lane/pattern</code>，运行仿真前需提供已有的 <code>frame_*.ppm</code>。尚未编译或运行 DUT 仿真，模拟侧 SD 与 VCOM 短接仍不在数字 checker 的结论范围内。</p></main></body></html>

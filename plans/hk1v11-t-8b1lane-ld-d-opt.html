@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_LD_D_OPT · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_LD_D_OPT · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-ld-d-opt.md" download="t_8b1lane_LD_D_OPT_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>LD_D_OPT 行加载时序验证计划</h1>
+<h2>1. 目标与模式</h2>
+<p>验证 <code>0x2F[7] LD_D_OPT</code>：960/720 channel 下，0使能6 packet延迟，1关闭延迟；6 packet对应3个DCLK。当前case为单lane 8B/10B短编码，要求 <code>SP=1、reg_eol=0</code>，不切换为413b/420b。</p>
+<p>短编码下，LD_D_OPT改变DATA_NUM，从而改变K1之后STB_A出现的时间；<code>TP_DLY_CNT0_START</code>自身也随DATA_NUM移动，不能用它作为开关延迟的固定比较起点。主判据改为 <strong>K1_FIND到STB_A上升沿的DCLK间隔差</strong>。短路径的TP_DLY_LOAD来自TPD_CLIP，固定LD_R=5时所有阶段均为10；LONG_TP_DLY_LOAD只作诊断，不是当前路径期望。</p>
+<h2>2. 激励</h2>
+<p>通过正常CHPI发送10帧恒定像素，每帧VACT=16、VBP=4、VFP=5；cfg_frame0为初始配置，最后活动行末发送下一份CTRL_F，cfg_frame10重复末档。固定CHIP_SEL=0、LD_R=5、LD_W=22、LD_F=0、AVE_MODE=0、TEST_PRTCT=0x72、CTRLF_CHECKSUM=0101（关闭保护），TP提前下降及强制Hi-Z关闭。无I2C，无PPM。</p>
+<table>
+<thead>
+<tr>
+<th>阶段/帧</th>
+<th>CH_SEL</th>
+<th>DPLC_MODE</th>
+<th>LD_D_OPT</th>
+<th>预期DATA_NUM</th>
+<th>主判据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0/1/2</td>
+<td>001（960）</td>
+<td>0</td>
+<td>0/1/0</td>
+<td>488/485/488</td>
+<td>0减1为3 DCLK，2恢复0</td>
+</tr>
+<tr>
+<td>3/4/5</td>
+<td>011（720）</td>
+<td>0</td>
+<td>0/1/0</td>
+<td>368/365/368</td>
+<td>3减4为3 DCLK，5恢复3</td>
+</tr>
+<tr>
+<td>6/7</td>
+<td>000（966）</td>
+<td>0</td>
+<td>0/1</td>
+<td>488/488</td>
+<td>差值0</td>
+</tr>
+<tr>
+<td>8/9</td>
+<td>001（960）</td>
+<td>1</td>
+<td>0/1</td>
+<td>245/245</td>
+<td>当前DPLC ECO下差值0</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Checker</h2>
+<ul>
+<li>用实际 <code>{R_CH_SEL,R_DPLC_MODE,R_LD_D_OPT}</code> 按上表顺序推进阶段；恢复档与之前档位相同，也必须进入新阶段，不能全表首匹配。</li>
+<li>以K1_FIND开始计数，到STB_A上升沿记录间隔。每次配置切换丢弃跨配置的未完成行，再跳过新档第一条K1行；后续按到达顺序配对，不声称已经按活动行号筛选。</li>
+<li>每档至少3个有效样本。960/720差值固定为3，恢复档与基线相同；966/DPLC差值固定为0，不从DUT计数生成expected。</li>
+<li>辅助检查SP=1、reg_eol=0、DATA_NUM表及TP_DLY_LOAD=10，失败样本不计通过数；LSI_PRTECT、R_LD_D取反及LD_R检查保留，并核对0x07[3:0]=5。STB缺失、X/Z、同档脉宽变化或开关档脉宽不一致报错。</li>
+<li>DPLC阶段依赖ECO_for_LD_D_DPLC_enable_20241230；缺宏报环境错误，不能PASS。功能、辅助或环境错误任一非零均不打印PASS。</li>
+<li>data_merge、digital、analog、chopper公共checker关闭；当前不检查SIM_OUT数值。</li>
+</ul>
+<h2>4. 验证与运行</h2>
+<p>以当前CHPI_SD_CTRL.v核对K1装载DATA_NUM、短路径TPD_CLIP=2*LD_R、STB时序及DPLC门控。须区分本地RTL模块测试与完整服务器CHPI/UVM仿真；本机没有VCS/UVM，完整编译及仿真仍需服务器确认。</p>
+<p>安装：<code>python3 install_t_8b1lane_LD_D_OPT_CHECKSUM_20261022.py --dv-top /path/to/top</code>，再运行 <code>t_8b1lane_LD_D_OPT</code>。默认也可将脚本放DV根目录或tests目录执行。未修改公共TB、driver或RTL。</p>
+<p>修正记录：此前11份cfg均漏配CTRLF_CHECKSUM，环境默认0000会打开checksum保护，使CH_SEL/DPLC_MODE与直接写入的LD_D_OPT不能按逐帧表同时生效。现全部显式写0101。该问题与短路径测量起点、恢复档识别分别修复；实际CHPI运行待服务器重跑。</p></main></body></html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_CG_OFF · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_CG_OFF · 验证计划附件</h1>
+<p class="source">来源：1012 工程的历史计划。此计划是参考资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-cg-off.md" download="t_8b1lane_CG_OFF_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>CG_OFF 时钟门控常开功能验证计划</h1>
+<h2>1. 依据与目标</h2>
+<ul>
+<li>寄存器 <code>0x33[0] CG_OFF</code>（<code>R_REG51_F[0]</code>，复位默认 0，<code>N_RST_NLOCK</code> 域），RTL 权威定义在 <code>LC_CPUWR.v:574</code>：
+  <code>assign CG_OFF = LSI_PRTECT ? R_REG51_F[0] : 1&amp;#x27;b0;</code>，为 TEST_PRTCT 受保护字段。</li>
+<li>唯一生效的使用点在 <code>CHPI_CONFIG_L0.v:74</code>：<code>CONFIG_CLK_REQ = CONFIG_ACTIVE | R_CG_OFF;</code>，
+  经 <code>CLKGEN.v:175</code> 门控出配置写时钟 <code>DCLK_CONFIG_GATED</code>，即 <code>WCK1_A</code> / <code>WCK1_A_CHPI</code>。</li>
+<li>功能定义：<code>CG_OFF=1</code> 时配置写时钟在无传输期间保持自由运行（时钟门控常开）；<code>=0</code> 时仅在有
+  配置包传输（<code>CONFIG_ACTIVE=1</code>）期间振荡。正常地址 0 保持 idle，自由时钟不得引发寄存器误写。</li>
+<li>本 case 只验证 CG_OFF 的时钟门控功能与配置通路安全性。<code>TEST_PRTCT</code> 仅作为解锁前提在每帧
+  固定写 <code>0x72</code>（同 <code>t_8b1lane_LD_D_OPT</code> 的固定写法），其锁定/边界行为由
+  <code>t_8b1lane_TEST_PRTCT</code> 覆盖，本 case 不重复。同字节其余位（<code>reg_lane_ck_inv_en</code> 等）不测。</li>
+</ul>
+<h2>2. Case 与配置</h2>
+<p>新 case <code>t_8b1lane_CG_OFF</code>，全 CHPI 配置帧写路径（不用 I2C），使用公共图像发送 sequence，需要正常 pattern 文件。
+<code>FRAME_NUM=5</code>，<code>CHIP_SEL=0</code>，<code>TEST_EN=0</code>（保证 <code>WCK1_A</code> 走 <code>DCLK_CONFIG_GATED</code> 而非 <code>T_REGLD</code>）。</p>
+<p>固定项：<code>CTRLF_CHECKSUM=0101</code>、<code>POL 0</code>、<code>PORSD 1</code>、常规行配置；每帧变化仅 <code>CG_OFF</code>。
+检查从训练完成、<code>cfg_frame0</code> 生效后开始，复位/训练阶段的时钟行为不在统计范围内。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">帧</th>
+<th style="text-align: center;">CG_OFF</th>
+<th>本帧检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;">0</td>
+<td>基线：空闲窗口 <code>WCK1_A_CHPI</code> 无上升沿，<code>CONFIG_CLK_REQ</code> 仅传输时为高</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: center;">1</td>
+<td>主判据：空闲窗口时钟自由运行，<code>CONFIG_CLK_REQ</code> 常高，<code>CG_OFF</code> 输出=1</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0</td>
+<td>关→开→关可逆恢复（对帧 0 基线一致）</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;">1</td>
+<td>功能安全性：自由时钟下写 <code>sw_reg_lane_ctrl=01010</code> 并核对输出，且全帧无误写</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0</td>
+<td>收尾恢复门控（对帧 0 基线一致）</td>
+</tr>
+</tbody>
+</table>
+<p><code>cfg_frame0</code> 训练后立即发送，<code>cfg_frame1..4</code> 在前一图像帧最后一个 VACT 行末发送（公共 <code>isptx_sequence.send_ppm</code>）。</p>
+<h2>3. Checker 设计与判定</h2>
+<p>被动 checker 随 test <code>include</code>，逐 DCLK 周期采样，按帧（以本帧 CTRL_F 写脉冲锚点 + 下一
+<code>VS_O</code> 圈定生效帧，同 TEST_PRTCT case 时序模型）统计：</p>
+<ol>
+<li><strong>配置生效</strong>：确认 <code>CG_OFF</code> 输出等于本档值、存储 <code>R_REG51_F[0]</code> 等于写入值、
+   <code>LSI_PRTECT=1</code>、<code>TEST_EN=0</code>。配置不符不计入通过数。</li>
+<li><strong>主判据（时钟门控）</strong>：逐周期跟踪 <code>CONFIG_ACTIVE</code>，只在连续无传输间隙
+    （<code>CONFIG_ACTIVE=0</code> 持续 ≥16 个 DCLK）内，先跳过入口两个 DCLK 采样点，
+    让最后一个有效配置脉冲结束，再统计 <code>WCK1_A_CHPI</code> 上升沿及有效空闲周期数：</li>
+<li><code>CG_OFF=0</code> 帧：间隙内沿数必须为 0；</li>
+<li><code>CG_OFF=1</code> 帧：沿数应接近间隙 DCLK 数的一半（自由运行），且 <code>CONFIG_CLK_REQ</code> 恒 1；</li>
+<li>同时记录本帧累计的空闲间隙总时长，间隙不足（如全部被配置包占满）时报告观测不足，
+     不得默认通过。
+   注意 <code>isptx_sequence</code> 每条活动行/消隐行都发 CTRL_L，<code>CONFIG_ACTIVE</code> 频繁拉高，
+   必须以实测间隙为准，不能假设帧内某固定时段空闲。</li>
+<li><strong>误写安全（每帧）</strong>：<code>CG_OFF=1</code> 期间抽查若干无副作用的输出字段
+   （如 <code>sw_reg_lane_ctrl</code>、<code>R_LD_R</code>、<code>R_CH_SEL</code> 等）与写前期望一致；帧 3 另核对
+   自由时钟下新写入的 <code>sw_reg_lane_ctrl=01010</code> 已正确出现在
+   <code>digital_top reg_lane_ctrl[4:0]</code>。发现任何非本帧写入引起的输出变化即报错。</li>
+<li><strong>完成条件</strong>：5 档全部完成且主判据、可逆性、误写安全均无错误；设独立进度计数与总超时。</li>
+</ol>
+<h2>4. RTL 定位辅助</h2>
+<p>波形建议保留：CTRL_F 0x33 写入、<code>R_REG51_F[0]</code>、<code>CG_OFF</code>（LC_CPUWR 输出）、
+<code>CONFIG_ACTIVE</code>、<code>CONFIG_CLK_REQ</code>、<code>DCLK_CONFIG_GATED</code>/<code>WCK1_A_CHPI</code>、<code>VS_O</code>。
+<code>CHPI_SD_CTRL.v</code> 中两处引用 <code>R_CG_OFF</code> 的 <code>CG_CELL</code> 已被注释、<code>CHPI_SCR_DEC_L0.v</code> 的
+同名端口悬空，属历史残留，不作为判据也不作为失败依据。</p>
+<h2>5. 验证状态</h2>
+<p>计划已实现为 case：<code>user_def.sv</code>（FRAME_NUM=5、CHIP_SEL=0、TEST_EN 由环境默认 0）、
+<code>cfg_frame0..4.txt</code>（每帧全字段，TEST_PRTCT 固定 0x72，CG_OFF=0/1/0/1/0，帧 3 另写
+sw_reg_lane_ctrl3/1=1 即 01010）、<code>cg_off_checker.sv</code>（写脉冲锚定 <code>ADDR51_F_TEST</code> +
+<code>DATA_C_TEST[0]</code>；<code>cg_check_config</code> 查 LSI_PRTECT/TEST_EN/输出与存储/软件分支选择；
+<code>cg_measure_window</code> 以 <code>CG_CC.DCLK</code> 为时基在 4000 周期窗口内按 <code>CONFIG_ACTIVE==0</code>
+≥16 周期间隙跳过入口两个 DCLK 采样后统计 <code>WCK1_A_CHPI</code> 上升沿，<code>CONFIG_CLK_REQ</code> 仍检查全部空闲采样；CG_OFF=0 帧 0 沿、
+=1 帧 ≥空闲/4，空闲 &lt;2000 周期或间隙 &lt;5 报观测不足；<code>cg_miswrite_spot</code> 抽查
+R_LD_R/R_CH_SEL/sw 存储位与 reg_lane_ctrl 期望 01010@帧3）、<code>t_8b1lane_CG_OFF.sv</code>
+（vseq+test，main_phase fork watchdog 10ms/check_flow join_any+disable fork+
+cg_final_report）、<code>test_lib.sv</code>、<code>test.f</code>、<code>waves_dumper.sv</code>。
+已登记 <code>regression/testname.f</code>。完成静态核对（cfg 字段值、checker 层次信号名与
+LC_CPUWR/LINK_CONFIG_CTRL/CHPI_CONFIG_L0/LC_REG_MAPPING 对照、文件清单、LF 无 BOM）；
+未做 SV/UVM 编译和 DUT 仿真。空闲窗口密度、门控关断时的残留电平和自由时钟下的
+实际沿频率须服务器仿真确认。</p>
+<p>2026-10-22：按服务器波形修复空闲入口边界计数。独立 Icarus 测试直接提取
+<code>cg_measure_window</code>：旧逻辑复现 47 个间隙各误计 1 沿；新逻辑正常边界 0 错误，
+空闲额外沿和常开模式停钟仍能报错，常开正常时钟通过。该结果仅覆盖 checker
+测量任务，不代表完整 UVM/DUT 仿真通过；服务器仍需重跑本 case。</p>
+<p>第二轮波形显示下一档 CG_OFF 在当前测量尚未结束时写入。原 20000 DCLK
+约 134 us，超过 VS 后约 46 us 的当前配置有效窗口，导致旧期望误报并漏掉
+下一次 0x33 写脉冲。窗口缩短为 4000 DCLK（约 27 us），在下一 CTRL_F
+前完成测量和寄存器抽查，仍要求至少 2000 有效空闲周期及 5 段合格间隙。</p></main></body></html>

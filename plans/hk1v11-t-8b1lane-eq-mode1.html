@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_EQ_MODE1 · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_EQ_MODE1 · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-eq-mode1.md" download="t_8b1lane_EQ_MODE1_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>EQ_MODE=1 软件 lane 设置验证计划</h1>
+<h2>验证目标</h2>
+<p>在 <code>AUTO_EQ_EN=0</code>、<code>EQ_MODE=1</code>、<code>reg_pin_eq=0</code> 条件下，通过 CHPI 更新 <code>sw_reg_lane_ctrl[4:0]</code>，确认数字顶层 <code>reg_lane_ctrl[4:0]</code> 跟随软件值，并且不受外部 <code>EQ[2:0]</code> 引脚变化影响。</p>
+<p>用户已确认以当前 RTL 为依据。<code>LC_REG_MAPPING.v</code> 中软件选择条件为 <code>reg_pin_eq | EQ_MODE</code>，所以 <code>EQ_MODE=1</code> 时应选择软件设置。期望值来自本计划的写入数据，运行时不反读 DUT 内部译码结果。</p>
+<h2>前置条件</h2>
+<ul>
+<li>在第一次 CHPI 配置写入前设置 <code>chip_tb_top.eq_mode_pin=1</code>、<code>chip_tb_top.aeq_pin=0</code>，并保持到全部检查结束。所有软件写入均发生在 <code>EQ_MODE=1</code> 期间。</li>
+<li>每帧通过 CHPI 写 <code>reg_pin_eq=0</code>（<code>0x33[7]</code>）。</li>
+<li>固定 <code>PORSD=1</code>、<code>TEST_PRTCT=0x72</code>、<code>CTRLF_CHECKSUM=0101</code>。其中 <code>0101</code> 用于关闭三帧 checksum 校验等待。</li>
+<li>沿用单 lane、12 ports、3840×16、8 帧配置。</li>
+<li>通过现有 TB 变量驱动引脚，变量经过连续赋值驱动 wire，再连接芯片封装层 inout 端口。</li>
+</ul>
+<h2>配置地址与激励</h2>
+<p>五个软件位分布如下：<code>sw_reg_lane_ctrl4/3</code> 位于 <code>0x02[1:0]</code>，<code>sw_reg_lane_ctrl2/1</code> 位于 <code>0x03[1:0]</code>，<code>sw_reg_lane_ctrl0</code> 位于 <code>0x04[0]</code>。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">帧</th>
+<th style="text-align: center;">写入 <code>sw_reg_lane_ctrl[4:0]</code></th>
+<th style="text-align: center;"><code>EQ[2:0]</code> 引脚</th>
+<th style="text-align: center;">期望 <code>reg_lane_ctrl[4:0]</code></th>
+<th>检查目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;"><code>00000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>00000</code></td>
+<td>软件全 0</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: center;"><code>11111</code></td>
+<td style="text-align: center;"><code>111</code></td>
+<td style="text-align: center;"><code>11111</code></td>
+<td>五位全部置 1</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><code>00001</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>00001</code></td>
+<td>bit0，其他位清零</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;"><code>00010</code></td>
+<td style="text-align: center;"><code>111</code></td>
+<td style="text-align: center;"><code>00010</code></td>
+<td>bit1</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;"><code>00100</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>00100</code></td>
+<td>bit2</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;"><code>01000</code></td>
+<td style="text-align: center;"><code>111</code></td>
+<td style="text-align: center;"><code>01000</code></td>
+<td>bit3</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;"><code>10000</code></td>
+<td style="text-align: center;"><code>000</code></td>
+<td style="text-align: center;"><code>10000</code></td>
+<td>bit4</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;"><code>00000</code></td>
+<td style="text-align: center;"><code>111</code></td>
+<td style="text-align: center;"><code>00000</code></td>
+<td>最后清零</td>
+</tr>
+</tbody>
+</table>
+<p><code>cfg_frame0.txt</code> 至 <code>cfg_frame7.txt</code> 实现上述配置；<code>cfg_frame8.txt</code> 重复最后一帧，供基础发送流程使用。EQ 引脚对应的 pin 模式译码值与本表软件期望不同，错误选择 pin 路径时应产生失配。</p>
+<h2>Checker 与通过条件</h2>
+<p>复用现有基础发帧流程，发送与 checker 并行运行。每个观察帧的 <code>VS_O</code> 上升沿设置本表对应的 <code>eq_pin</code>，等待 <code>1ns</code> 后，对以下五位信号进行一次严格比较：</p>
+<pre><code class="language-text">chip_tb_top.u_HK1V11.u_HK1V11_digital_top.u_LOGIC_CENTER.reg_lane_ctrl[4:0]
+</code></pre>
+<p>期望值直接使用本表的 CHPI 软件写入值。checker 只需一个 8 次循环、一张固定期望表和一次 <code>!==</code> 比较。失配报告帧号、EQ 引脚、实际值和期望值。首个有效 <code>VS_O</code> 与初始 CTRL_F 配置生效的对应关系需在目标仿真确认。</p>
+<p>8 帧全部比较完成且无失配即通过，用数字顶层输出变化验证软件写入及软件路径选择生效。主测试持有 objection，等待发送与检查结束；缺帧使用既有仿真总超时。</p>
+<h2>文件规划与范围</h2>
+<ul>
+<li><code>t_8b1lane_EQ_MODE1.sv</code>：test/vseq，配置环境、设置模式引脚，协调发送与检查。</li>
+<li><code>eq_mode1_checker.sv</code>：固定期望表及精简比较循环。</li>
+<li><code>cfg_frame0.txt</code> 至 <code>cfg_frame8.txt</code>：逐帧配置和结束配置。</li>
+<li><code>user_def.sv</code>、<code>test_lib.sv</code>、<code>test.f</code>、<code>waves_dumper.sv</code>：沿用工程格式。</li>
+<li>独立生成脚本 <code>generate_t_8b1lane_EQ_MODE1.py</code> 兼容 Python 3.9，内嵌所有文件；支持从top或tests运行，以及<code>--dv-top</code>指定工程。按需升级TB的变量驱动wire连接并登记回归；不生成 PPM 或 <code>ctrl_l_line_cfg.txt</code>。</li>
+</ul>
+<p>本 case 不覆盖自动 EQ、checksum 保护功能或其他选择模式。已生成case、配置和独立安装脚本。通用数据/数字/模拟/chopper scoreboard关闭，本case通过专用五位checker判断。尚未进行完整 DUT 编译和仿真。</p></main></body></html>

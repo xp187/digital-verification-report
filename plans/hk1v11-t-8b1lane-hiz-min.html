@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_HIZ_MIN · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_HIZ_MIN · 验证计划附件</h1>
+<p class="source">来源：1012 工程的历史计划。此计划是参考资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-hiz-min.md" download="t_8b1lane_HIZ_MIN_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>HIZ_MIN_SEL / HIZ_MIN_VAL 验证计划</h1>
+<h2>目标与依据</h2>
+<p>用一个联合 case 验证 <code>HIZ_MIN_SEL</code> 的选择功能和 <code>HIZ_MIN_VAL</code> 的手动高阻间隔。两个字段位于地址 <code>0x2F</code>：<code>HIZ_MIN_SEL</code> 为 bit 1，<code>HIZ_MIN_VAL</code> 为 bits [6:2]，写入生效需要 <code>TEST_PRTCT=0x72</code>。规格规定在 <code>TP_F_AHEAD=1</code> 且 <code>LD_F=1</code> 时，手动高阻间隔为 <code>HIZ_MIN_VAL × 4 + 4 packet</code>。</p>
+<p>RTL 中，<code>CHPI_SD_CTRL</code> 用 <code>HIZ_MIN_SEL</code> 选择 <code>HIZ_MIN_VAL</code> 或自动阈值，并由该阈值生成 <code>STB_A_FAKE/STB_B_FAKE</code>；<code>ANCTL</code> 在 <code>LD_F=1</code> 时选择 FAKE 高阻路径。因此本 case 以实际输出变化为判定依据，不把寄存器读回当作功能通过。</p>
+<p>参考：<code>LC_CPUWR.v:524-526</code>、<code>CHPI_SD_CTRL.v:188-211,444-451</code>、<code>ANCTL.v:154-162</code>。现有 <code>t_8b1lane_TP_F_AHEAD</code> 只覆盖 <code>LD_F=0</code>、<code>HIZ_MIN_SEL=0</code>，本 case 独立验证 <code>LD_F=1</code> 的手动设置。</p>
+<h2>激励配置</h2>
+<ul>
+<li>沿用 8b1lane 基础发送流程；每帧一次写入该帧全部配置。保持 <code>TEST_PRTCT=0x72</code>、<code>TP_F_AHEAD=1</code>、<code>LD_F=1</code>、<code>LD_W=32</code>，并固定其他会影响输出时序或高阻状态的配置。保持正常解锁与输出使能。</li>
+<li>每组至少一整帧、16 条活动行；只用配置稳定后的活动行做宽度比较。末尾再发送一帧与 G 相同的配置，保证 G 的最后一帧数据完整结束。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>组别</th>
+<th style="text-align: right;"><code>HIZ_MIN_SEL</code></th>
+<th style="text-align: right;"><code>HIZ_MIN_VAL</code></th>
+<th>预期与目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td>自动间隔基准</td>
+</tr>
+<tr>
+<td>B</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">31</td>
+<td>应与 A 相同，证明 SEL=0 时 VAL 被忽略</td>
+</tr>
+<tr>
+<td>C</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td>手动间隔 4 packet，检查下边界</td>
+</tr>
+<tr>
+<td>D</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td>手动间隔 8 packet，检查相邻值</td>
+</tr>
+<tr>
+<td>E</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">10</td>
+<td>手动间隔 44 packet，检查中间值</td>
+</tr>
+<tr>
+<td>F</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">31</td>
+<td>手动间隔 128 packet，检查上边界</td>
+</tr>
+<tr>
+<td>G</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">31</td>
+<td>应恢复 A 的自动间隔，检查 SEL 重新关闭</td>
+</tr>
+</tbody>
+</table>
+<p><code>0x2F</code> 每帧写入的字段组合为 <code>(HIZ_MIN_VAL &amp;lt;&amp;lt; 2) | (HIZ_MIN_SEL &amp;lt;&amp;lt; 1)</code>；保留位和本 case 不测的 bit 7 均为 0。<code>cfg_frame7</code> 重复 G；A～G 对应 <code>cfg_frame0</code>～<code>cfg_frame6</code>。</p>
+<h2>Checker 观测与判定</h2>
+<ol>
+<li>在每条待检查活动行确认 <code>TP_F_AHEAD=1</code>、<code>LD_F=1</code>、<code>HIZ_MIN_SEL/HIZ_MIN_VAL</code> 与该帧预期一致；配置尚在帧交接中变化的行不用于宽度判定。</li>
+<li>记录 <code>STB_A_FAKE</code> 上升、下降边沿，计算脉宽。手动模式期望由 <code>VAL × 4 + 4 packet</code> 换算，不能用当前 DUT 的 <code>FAKE_LD_W_TAR</code> 作为期望值。A、B、G 的实测宽度应相同，并核对自动模式的规格期望。</li>
+<li>同时观察 <code>u_LOGIC_CENTER.POL1A/POL1B</code>：FAKE 高阻期间两路应同时关闭；高阻结束后恢复正常互补输出。服务器实际 <code>digital_top</code> 不包含最初假定的 <code>POL1A_DRA_L_O</code> 端口，因此checker使用 <code>LOGIC_CENTER</code> 中已有的输出信号；<code>ANCTL.HIZ_NRM1</code> 只用于定位问题，不作为通过判据。</li>
+<li>每组统计至少一条配置稳定且完成比较的有效行；报错打印组别、帧号、行号、SEL、VAL、实测间隔和期望间隔。整个 case 有超时和完成计数，避免没有采到输出却误报通过。</li>
+</ol>
+<h2>编码前需核对的时间基准</h2>
+<p>规格以 packet 表示高阻间隔，RTL 用 DCLK 计数且输出经半周期寄存器。实现 checker 前，需从 <code>STB_A_FAKE</code> 与顶层 POL 的实际边沿确认 packet↔DCLK 换算、起止边沿及固定延迟。RTL 的自动阈值还依赖 <code>TP_falling_ahead_cycle</code>，因此自动模式不能写死一个 DCLK 常数；应结合规格默认最小值和实际频率计算期望。若规格值与 RTL 边沿定义不一致，先记录差异再确定最终断言。</p>
+<h2>文件与验证</h2>
+<p>本目录现已生成 <code>cfg_frame0.txt</code>～<code>cfg_frame7.txt</code>、UVM test、checker 和编译入口；可写工程根目录的 <code>generate_t_8b1lane_HIZ_MIN.py</code> 可重新生成。生成器不处理 PPM。代码按当前 RTL 将手动模式期望换算为 <code>2 × (VAL + 1) DCLK</code>，自动模式按实时提前周期计算为 <code>2 × (11 + TP_falling_ahead_cycle) DCLK</code>。本地 Icarus 隔离激励验证了120条通过，以及故意加长1 DCLK时准确报错；修改观测层级后的服务器UVM编译和DUT仿真仍待确认。</p></main></body></html>

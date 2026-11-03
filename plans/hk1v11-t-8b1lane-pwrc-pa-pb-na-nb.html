@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_PWRC_PA_PB_NA_NB · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_PWRC_PA_PB_NA_NB · 验证计划附件</h1>
+<p class="source">来源：1012 工程的历史计划。此计划是参考资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-pwrc-pa-pb-na-nb.md" download="t_8b1lane_PWRC_PA_PB_NA_NB_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>PWRC_PA / PWRC_PB / PWRC_NA / PWRC_NB 验证计划</h1>
+<h2>1. 验证目标与依据</h2>
+<p>验证 CHIP_SEL=1 时，四个字段在 A/B 段选择正确的 P/N 驱动控制码，并检查到最终 <code>chip_tb_top.u_HK1V11.PWRC_SOP_P/N[2:0]</code>。</p>
+<p>按用户确认，本 case 采用当前 RTL 的编码转换，完整检查 3 bit，不采用截图中直接比较 SOP[2:1] 的方式。截图与 RTL 的描述差异保留为背景，不作为本 case 的失败条件。</p>
+<p>当前依据为 <code>cmodel/test/HV2A31/HK1V11_digital_top/seperated_code/LC_REG_MAPPING.v</code>：第 261 行为常规 P/N 编码，第 325～339 行为 A/B/C 选择。其编码表为：</p>
+<table>
+<thead>
+<tr>
+<th>字段配置</th>
+<th>最终 SOP[2:0] 预期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00</td>
+<td>010</td>
+</tr>
+<tr>
+<td>01</td>
+<td>100</td>
+</tr>
+<tr>
+<td>10</td>
+<td>101</td>
+</tr>
+<tr>
+<td>11</td>
+<td>111</td>
+</tr>
+</tbody>
+</table>
+<p>checker 内使用固定四项查表，不读取 DUT 实际输出或内部组合结果生成预期。</p>
+<h2>2. 固定条件</h2>
+<ul>
+<li>使用现有 8-bit、单 lane 流程，CHIP_SEL=1，发送 8 帧。</li>
+<li>固定 PWRC_TA=PWRC_TB=01、PWRC_TSEL=0；本次不检查 TA/TB 的绝对长度。</li>
+<li>固定 C 段 PWRC_P=10、PWRC_N=01，其最终 SOP_P/N 预期分别为 101/100。</li>
+<li>PORSD=1、VPS_EN=00，保持正常输出；仅检查 R_BKDU=0 内的完整周期。</li>
+<li>CTRLF_CHECKSUM=0101，关闭配置校验等待。</li>
+<li>data_merge、digital、analog checker 开启，chopper checker 关闭。</li>
+<li>不生成或复制 PPM，复用已有图像；保留正常支持的链路频率及 HFP。</li>
+<li>仅配置本测试需要的目标字段及必要前提，不加入无关寄存器遍历。</li>
+</ul>
+<h2>3. 八帧激励与完整预期</h2>
+<p>前四帧使用不同编码，检查 P/N 和 A/B 选错或接反；后四帧检查统一挡位。表中输出对均按 P/N 顺序。</p>
+<table>
+<thead>
+<tr>
+<th>帧</th>
+<th>PA</th>
+<th>PB</th>
+<th>NA</th>
+<th>NB</th>
+<th>A 段 SOP_P/N</th>
+<th>B 段 SOP_P/N</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>00</td>
+<td>01</td>
+<td>10</td>
+<td>11</td>
+<td>010 / 101</td>
+<td>100 / 111</td>
+</tr>
+<tr>
+<td>1</td>
+<td>01</td>
+<td>10</td>
+<td>11</td>
+<td>00</td>
+<td>100 / 111</td>
+<td>101 / 010</td>
+</tr>
+<tr>
+<td>2</td>
+<td>10</td>
+<td>11</td>
+<td>00</td>
+<td>01</td>
+<td>101 / 010</td>
+<td>111 / 100</td>
+</tr>
+<tr>
+<td>3</td>
+<td>11</td>
+<td>00</td>
+<td>01</td>
+<td>10</td>
+<td>111 / 100</td>
+<td>010 / 101</td>
+</tr>
+<tr>
+<td>4</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>00</td>
+<td>010 / 010</td>
+<td>010 / 010</td>
+</tr>
+<tr>
+<td>5</td>
+<td>01</td>
+<td>01</td>
+<td>01</td>
+<td>01</td>
+<td>100 / 100</td>
+<td>100 / 100</td>
+</tr>
+<tr>
+<td>6</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>10</td>
+<td>101 / 101</td>
+<td>101 / 101</td>
+</tr>
+<tr>
+<td>7</td>
+<td>11</td>
+<td>11</td>
+<td>11</td>
+<td>11</td>
+<td>111 / 111</td>
+<td>111 / 111</td>
+</tr>
+</tbody>
+</table>
+<p>所有帧 C 段均为 101 / 100。cfg_frame8 重复帧 7 的配置，作为结束保护；仍然只发送 8 帧图像。</p>
+<p>每个字段均覆盖 00/01/10/11，并在 A/B、P/N 的不同位置验证同一张完整三位编码表。本次不做四个字段全部组合的穷举。</p>
+<h2>4. 检查点</h2>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>明确预期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>配置写入</td>
+<td>CTRL_F payload 及生效 PA/PB/NA/NB 与对应配置一致</td>
+</tr>
+<tr>
+<td>A 段</td>
+<td>PWRC_TIME=01 时，最终 P/N 分别等于 PA/NA 的三位查表码</td>
+</tr>
+<tr>
+<td>B 段</td>
+<td>PWRC_TIME=10 时，最终 P/N 分别等于 PB/NB 的三位查表码</td>
+</tr>
+<tr>
+<td>C 段</td>
+<td>PWRC_TIME=00 时，最终 P/N 始终为固定 101/100</td>
+</tr>
+<tr>
+<td>选择隔离</td>
+<td>前四帧的非对称编码能够识别 P/N 或 A/B 接反；各段均按自身字段检查</td>
+</tr>
+<tr>
+<td>完整性</td>
+<td>每组配置至少完成一次有效 A→B→C 检查；缺段、缺样本也报错</td>
+</tr>
+<tr>
+<td>帧交接</td>
+<td>预期按实际 CTRL_F 写入推进，不因仍处于上一帧 VBP 而使用旧配置</td>
+</tr>
+</tbody>
+</table>
+<p>数字控制正确不等于模拟电流或建立时间已验证。analog checker 在本 case 中保留为通用数据回归，不替代最终 SOP 检查。</p>
+<h2>5. 精简 checker 实现方案</h2>
+<p>只需四项编码函数、八组固定配置及一个逐 DCLK 检查流程，不引入通用 scoreboard 或复杂恢复机制。</p>
+<ol>
+<li>观察实际 CTRL_F 地址写入。TA/TB/P/N 位于 0x0A，PA/PB/NA/NB 位于 0x1F。等同一组所需配置均已接收并生效后，才允许开始本组检查，避免把更新到一半的配置当成完整新配置。</li>
+<li>在 R_BKDU=0 的同步输出起点锁存本周期配置；确认与计划值一致后，开始检查。同步起点沿用 STB_NE 被 DCLK 消费的时刻，不仅等待 PWRC_TIME[0] 上升沿。</li>
+<li>每个 DCLK 沿前保存 PWRC_TIME，待寄存更新稳定后，按保存的阶段和固定编码表比较最终 PWRC_SOP_P/N。这样考虑 R_PWRCP_COP/N 的一级寄存延迟。</li>
+<li>使用完整三位四态比较（例如 <code>actual !== expected</code>），X/Z 同样报错。最终端口直接与计划期望比较，不以内部实际值为预期。</li>
+<li>要求观察到 A→B→C，分别累计阶段检查次数。即使后四帧 A/B 输出相同，也按 PWRC_TIME 区分阶段，不能靠 SOP 数值变化判定阶段是否出现。</li>
+<li>周期内出现配置更新、BKDU 切换或复位时，跳过被打断的周期；已完成周期保留。每组必须有完整周期，避免全部跳过仍通过。</li>
+<li>仅打印失败及最终每组 A/B/C 检查次数。失败包含配置组号、阶段、四个配置值、实际 SOP_P/N 与预期值。</li>
+<li>八帧 sequence 返回并完成必要收尾后退出，不等待第九帧；保留一个总超时用于捕获传输未完成。</li>
+</ol>
+<p>阶段观察路径为数字顶层下 <code>u_LOGIC_CENTER.CENTER1.ANCTL.PWRC_TIME</code>，配置位于 <code>u_LOGIC_CENTER.LINK_LOGIC.LINK_CONFIG_CTRL.LC_REG_MAPPING</code>。最终比较路径采用现有 case 已使用的 <code>chip_tb_top.u_HK1V11.PWRC_SOP_P/N</code>；实现时再核对服务器版本的层次。</p>
+<h2>6. 通过条件与当前状态</h2>
+<ul>
+<li>PA/PB/NA/NB 四个字段全部覆盖四挡完整三位编码。</li>
+<li>八组 A、B、C 均有完整检查，最终 P/N 与表格预期完全一致。</li>
+<li>帧间配置更新无旧预期误报，通用 checker 无新增错误，仿真正常结束。</li>
+<li>已按本计划生成 case、checker、8 帧激励配置及独立 Python 安装脚本；回归列表已登记。</li>
+<li>静态核对已覆盖四字段 00/01/10/11、0x0A/0x1F payload 顺序、A/B/C 三段三位预期及 checker 开关。Python 脚本语法检查通过。</li>
+<li>完整 DUT 编译和仿真尚未执行；仿真前需连接已有 <code>frame_0.ppm</code> 至 <code>frame_7.ppm</code> 图案。</li>
+</ul></main></body></html>

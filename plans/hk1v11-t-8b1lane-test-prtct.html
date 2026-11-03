@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_TEST_PRTCT · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_TEST_PRTCT · 验证计划附件</h1>
+<p class="source">来源：1012 工程的历史计划。此计划是参考资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-test-prtct.md" download="t_8b1lane_TEST_PRTCT_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>TEST_PRTCT 验证计划</h1>
+<h2>目标与依据</h2>
+<p>验证寄存器 <code>0x30 TEST_PRTCT[7:0]</code>（默认 <code>8&amp;#x27;h00</code>）作为 LSI 保护解锁钥匙的完整行为：</p>
+<ol>
+<li>写入路径不被拦截：任何值都存入 <code>LC_CPUWR.R_REG48_F</code>。</li>
+<li>解锁判定：<code>assign LSI_PRTECT = (R_REG48_F == 8&amp;#x27;h72)</code>，只有 <code>0x72</code> 解锁（<code>LC_CPUWR.v:366-367</code>）。</li>
+<li>锁定时全部受保护字段输出强制为复位默认值（<code>LC_CPUWR.v:403-586</code> 各 <code>LSI_PRTECT ?</code> assign）。</li>
+<li>解锁时全部受保护字段输出跟随存储值。</li>
+<li>复位默认即锁定（RSTN 复位域）。</li>
+</ol>
+<p>写入路径全部走 CHPI 配置帧（cfg_frame 字段经 <code>isprx_env_cfg</code> 组包为 CTRL_F 负载，DUT 侧 <code>FCONFIG_ADD/ADDRxx_F_TEST</code> 写入），不使用 I2C。读回掩码 <code>REGRD_NOML</code>（I2C 读 mux）不在本计划范围内。</p>
+<p>参考：<code>LC_CPUWR.v</code>、<code>cmodel/test/HV2A31/HK1V11_digital_top/seperated_code</code>；检查机制参照 <code>agents/isprx_env/auto_script/chpi_generated/cfg_frame_get_cfg_val_chip0.sv</code>（层次引用读 DUT 字段）与 <code>cfg_frame_all_checks_chip0_pwd_mismatch.sv</code>（锁定期保护字段默认值期望表）；既有 case <code>t_8b1lane_TESTO_SEL</code> 已证明 CHPI 每帧写 <code>TEST_PRTCT=0x72</code> 可行，<code>t_8b1lane_TEST_PRTCT0</code> 为旧空壳 case，本 case 独立新建。</p>
+<h2>受保护字段清单（锁定时输出回退默认值）</h2>
+<p>来源 <code>LC_CPUWR.v</code> 输出 assign（行号见当前 writable 树）：</p>
+<table>
+<thead>
+<tr>
+<th>寄存器</th>
+<th>字段（锁定时默认值）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x20</td>
+<td>R_TESTO_SEL(6&#x27;h00)、R_TESTO_EN_OPT(0)、PWRC_TSEL(0)</td>
+</tr>
+<tr>
+<td>0x21</td>
+<td>R_MON_DC_VOL(3&#x27;b000)、R_UTC(2&#x27;b00)、R_FRM_CHK_MODE(0)</td>
+</tr>
+<tr>
+<td>0x22</td>
+<td>R_HIZ_SEL、SRE、SRER_P、SREF_P、SRER_N、SREF_N、STR、CVBP_SEPARATE（均 0）</td>
+</tr>
+<tr>
+<td>0x23</td>
+<td>R_OHIZ_12(0)、R_OHIZ_34(0)、reg_ana_test_sel(4&#x27;b0000)</td>
+</tr>
+<tr>
+<td>0x24</td>
+<td>reg_cr_done_cnt(6&#x27;b010101)、cr_done_filter(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x25</td>
+<td>reg_cdr_rlpf(4&#x27;b1100)</td>
+</tr>
+<tr>
+<td>0x26</td>
+<td>reg_icp_bias_tune(3&#x27;b100)、reg_kvco_ctrl(Loop_sel 默认 A/8)</td>
+</tr>
+<tr>
+<td>0x28</td>
+<td>R_AABB(2&#x27;b00)、R_BAC(0)、DBCO_DRV(2&#x27;b00)、VPS_EN_0(0)、R_DBC_VBK_ON(0)</td>
+</tr>
+<tr>
+<td>0x29</td>
+<td>R_DBC(0)、R_DBC_WIDTH_OPT(2&#x27;b01)、R_MASK_6PIX(0)、CP_VBP1R(2&#x27;b00)、CP_VBP2R(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x2A</td>
+<td>OVC_POS(2&#x27;b10)、OVC_NEG(2&#x27;b01)、CP_VBN1L(2&#x27;b00)、CP_VBN2L(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x2B</td>
+<td>DCBIAS_CHOP(4&#x27;b0000)、DCBIAS_TOT(2&#x27;b00)、DC_MON_SEL(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x2C</td>
+<td>BGR_SEL(4&#x27;b0000)、BGR_TRIM(3&#x27;b000)</td>
+</tr>
+<tr>
+<td>0x2D</td>
+<td>R_LENB_SHIFT(2&#x27;b00)、CN_VBP1R(2&#x27;b00)、CN_VBP2R(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x2E</td>
+<td>R_PTAT_EN(0)、R_PWRC_LS(2&#x27;b00)、R_TP_F_AHEAD(0)、CN_VBN1L(2&#x27;b00)、CN_VBN2L(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x2F</td>
+<td>R_HIZ_MIN_SEL(0)、R_HIZ_MIN_VAL(5&#x27;b00000)、R_LD_D_OPT(0)</td>
+</tr>
+<tr>
+<td>0x33</td>
+<td>reg_pin_eq(0)、reg_lane_ck_inv_en(0)、CG_OFF(0)</td>
+</tr>
+<tr>
+<td>0x35</td>
+<td>reg_fbdiv_clk_sel(2&#x27;b00)</td>
+</tr>
+<tr>
+<td>0x36</td>
+<td>reg_eq_bias_tune(8&#x27;h17)</td>
+</tr>
+<tr>
+<td>0x37</td>
+<td>reg_vos_ctrl(6&#x27;b100000)、reg_vos_ad_en(1)</td>
+</tr>
+<tr>
+<td>0x38</td>
+<td>UTC_header_cnt(2&#x27;b01)、UTC_long01_frame(2&#x27;b01)、reg_pin_eol_det(1)、reg_eol_det(0)、reg_eol(0)</td>
+</tr>
+<tr>
+<td>0x39</td>
+<td>UTC_header_frame(3&#x27;b011)</td>
+</tr>
+<tr>
+<td>0x90/0x91</td>
+<td>reg_fast_lock_rlpf(4&#x27;b0110)、reg_fast_lock_icp(4&#x27;b1000)、reg_fine_lock_rlpf(4&#x27;b0011)、reg_fine_lock_icp(4&#x27;b1100)</td>
+</tr>
+<tr>
+<td>0x92</td>
+<td>FSEL(2&#x27;b00)、reg_pbs_flt(0)、reg_lock_wd_sel(2&#x27;b10)</td>
+</tr>
+<tr>
+<td>0x93</td>
+<td>BCC_M(4&#x27;b0010)</td>
+</tr>
+</tbody>
+</table>
+<p>非保护字段（0x00~0x1F 常规配置：POL、PORSD、CH_SEL、SCREN、AVE_<em>、DPLC_</em>、CTRLF_CHECKSUM、PWRC_P/N、VBK_EN、ACS_EN、Skip_frame 系列、EQ/VOS 之外的链路配置等）不受 LSI_PRTECT 门控，每帧写入立即生效。0x34[5:0] lane 状态与 regr_BCC_M/SDID/AEQ 为只读状态，不参与写入比对。</p>
+<h2>激励</h2>
+<p>单 lane，FRAME_NUM=8，共 9 次 TEST_PRTCT 写入：cfg_frame0 在训练后立即发送，cfg_frame1~8 在图像帧 1~8 的 VFP 发送。每帧 CTRL_F 全字段重写，按帧只变 <code>TEST_PRTCT</code> 与安全字段：</p>
+<table>
+<thead>
+<tr>
+<th>帧</th>
+<th>TEST_PRTCT</th>
+<th>状态</th>
+<th>安全字段（0x20~0x23 测试/监测、0x2B/0x2C 偏置等）</th>
+<th>CDR/时钟/UTC 等敏感字段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0x00</td>
+<td>锁定（复位默认即锁）</td>
+<td>非默认</td>
+<td>非默认</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0x71</td>
+<td>锁定（边界 -1）</td>
+<td>非默认</td>
+<td>非默认</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0x72</td>
+<td>解锁</td>
+<td>非默认</td>
+<td>默认</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0x73</td>
+<td>锁定（边界 +1）</td>
+<td>非默认</td>
+<td>非默认</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0x72</td>
+<td>再解锁（可重入）</td>
+<td>非默认</td>
+<td>默认</td>
+</tr>
+<tr>
+<td>5</td>
+<td>0xFF</td>
+<td>锁定（全 1 边界）</td>
+<td>非默认</td>
+<td>非默认</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0x72</td>
+<td>解锁</td>
+<td>监测/偏置安全子集全 1</td>
+<td>默认</td>
+</tr>
+<tr>
+<td>7</td>
+<td>0x72</td>
+<td>解锁</td>
+<td>归 0</td>
+<td>默认</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0x72</td>
+<td>解锁（保护尾帧，重复帧 7）</td>
+<td>归 0</td>
+<td>默认</td>
+</tr>
+</tbody>
+</table>
+<p>约束：</p>
+<ul>
+<li>锁定帧可对全部受保护字段（含敏感字段）写非默认值，输出被门控不影响链路；<strong>每个解锁帧必须把敏感字段（CDR fast/fine lock、cr_done、FSEL、fbdiv、EQ bias、VOS、UTC、CG_OFF、DBC/AABB 等）写回默认</strong>，防止锁定期残留值在解锁后生效破坏链路。</li>
+<li>非保护字段全程使用链路安全值（与正常 case 一致）。</li>
+<li>每帧正常发送 CTRL_L/LSP 与数据，帧间 guard 空闲，保证写入窗口与观测窗口分离。</li>
+<li>解锁帧中安全字段写非默认值只驱动测试/监测输出，不触碰链路信号。</li>
+<li>data_merge、digital_top、analog 检查保持开启。</li>
+</ul>
+<h2>Checker 与通过条件</h2>
+<p>每帧配置写入窗口结束后做全字段比对（复用/仿照 <code>get_cfg_val</code> + <code>check_cfg_signal</code> 机制，为本 case 生成 8 帧全字段检查）：</p>
+<ol>
+<li><strong>TEST_PRTCT 自身</strong>：每帧 <code>R_REG48_F == 写入值</code>，且 <code>LSI_PRTECT == (R_REG48_F == 8&amp;#x27;h72)</code>；9 档值（00/71/72/73/72/FF/72/72/72）全部覆盖。</li>
+<li><strong>非保护字段</strong>：每帧 <code>== cfg_frame 写入值</code>（始终直接生效）。</li>
+<li><strong>保护字段，锁定帧（0/1/3/5）</strong>：</li>
+<li>输出 <code>== 复位默认值</code>（上表期望，参照 pwd_mismatch 检查文件写法）；</li>
+<li>层次引用核对存储 <code>R_REG32_F~R_REG47_F</code>、<code>R_REG51/53/54/55/56/57_F</code> <code>== 非默认写入值</code>，证明&quot;存储成功、输出被门控&quot;。</li>
+<li><strong>保护字段，解锁帧（2/4/6/7/8）</strong>：输出 <code>== 该帧写入值</code>（安全字段非默认跟随；帧 6 安全子集全 1、帧 7/8 归 0 验证逐位可控；敏感字段写默认故输出==默认==存储）。</li>
+<li><strong>字节解码</strong>：每帧等待 <code>ADDR48_F_TEST</code> 脉冲核对 <code>DATA_C_TEST</code> 为该帧 TEST_PRTCT 值，确认 CHPI→0x30 地址解码正确（沿用 <code>t_8b1lane_TESTO_SEL</code> 的 <code>@(posedge WCK1_A)</code> 等待手法）。</li>
+<li><strong>复位默认</strong>：首帧配置前检查 <code>R_REG48_F==8&amp;#x27;h00</code>、<code>LSI_PRTECT==0</code>、各保护输出已处于默认值（复位即锁定）。</li>
+<li><strong>防漏检</strong>：维护每帧已检查字段计数器，须等于全字段总数；<code>get_cfg_val</code> 直读存储的字段（如 TEST_PRTCT→R_REG48_F、PWRC_CTRL→R_REG31_F）单独补输出侧层次引用比对。</li>
+<li><strong>通过条件</strong>：9 次写入全部完成、每帧全字段比对通过、锁定↔解锁共 5 次切换的输出跟随全部验证到、全程 data_merge/digital/analog 无错误。</li>
+</ol>
+<h2>范围与状态</h2>
+<ul>
+<li>运行中不触发 RSTN 复位，复位项仅在仿真起始段检查。</li>
+<li>I2C 写/读路径（含 <code>REGRD_NOML</code> 读回掩码）不覆盖，如需要另开 I2C case。</li>
+<li>锁定帧对敏感字段写非默认值依赖输出门控生效，若 RTL 后续版本改动门控策略导致链路异常，checker 会以 analog/digital 检查错误形式暴露，需回溯区分。</li>
+</ul>
+<h2>实现状态与计划偏差（2026-10-21）</h2>
+<p>已实现全部代码并登记回归：</p>
+<ul>
+<li>文件：<code>cfg_frame0.txt</code>~<code>cfg_frame8.txt</code>、<code>testprtct_checker.sv</code>（74 个受保护字段 + 47 个非保护字段全字段检查表）、<code>cfg_frame_all_checks_chip0_testprtct.sv</code>（检查流程）、<code>t_8b1lane_TEST_PRTCT.sv</code>（vseq+test）、<code>test_lib.sv</code>、<code>test.f</code>、<code>user_def.sv</code>、<code>waves_dumper.sv</code>；已登记 <code>regression/testname.f</code>。</li>
+<li>静态交叉验证通过：Python 脚本核对 checker 各期望队列长度一致（各 74 项）且逐字段对齐、9 个 cfg_frame 与期望队列逐字段一致、<code>tp_get_cfg_val</code>/<code>tp_get_cfg_store</code> 引用的层次信号名均在 <code>LC_CPUWR.v</code>/<code>LINK_CONFIG_CTRL.v</code>/<code>LC_REG_MAPPING.v</code> 中存在。</li>
+<li>尚未做服务器编译与 DUT 仿真。</li>
+</ul>
+<p>与原计划的偏差（RTL 译码核实后调整）：</p>
+<ol>
+<li><strong>0x90~0x93 仅 I2C 可写</strong>：<code>ADDR144_F~ADDR147_F</code> 仅在 <code>SPECIAL_ADDR_TEST_EN</code> 的 I2C 路径置位（<code>LC_CPUWR.v:654</code> 起），CHPI CTRL_F 只打包 0x00~0x3F。本 case（纯 CHPI 写）中这 8 个字段（reg_fast_lock_rlpf/icp、reg_fine_lock_rlpf/icp、FSEL、reg_pbs_flt、reg_lock_wd_sel、BCC_M）只验证&quot;输出保持复位默认 + 存储保持默认&quot;，写入跟随需 I2C case 覆盖。</li>
+<li><strong>帧 6 &quot;全 1&quot; 仅限监测/偏置安全子集</strong>（TESTO/DC 监测、DCBIAS、BGR 等）：HIZ/SR 类字段（HIZ_SEL、R_CH12/34_HIZ、SRE/SRER/SREF、STR、CVBP_SEPARATE、reg_ana_test_sel 等）置 1 会高阻或扰动链路，解锁帧保持默认，仅在锁定帧写非默认值验证门控。</li>
+<li><strong>检查同步</strong>：每帧以 <code>ADDR48_F_TEST</code> 写脉冲为锚点核对解码字节，再等下一个 <code>VS_O</code> 做全字段比对（写脉冲 + VS_O 串联），替代纯 VS_O 同步以避开首帧竞争。</li>
+<li><strong>末尾增加帧 8</strong>（重复帧 7 配置），共 9 次 TEST_PRTCT 写入，验证解锁态可跨帧保持。</li>
+</ol></main></body></html>

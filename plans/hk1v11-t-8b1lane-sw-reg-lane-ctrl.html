@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_sw_reg_lane_ctrl · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_sw_reg_lane_ctrl · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-sw-reg-lane-ctrl.md" download="t_8b1lane_sw_reg_lane_ctrl_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>sw_reg_lane_ctrl 数字侧验证计划</h1>
+<h2>目标与依据</h2>
+<p>验证 CHPI 写入五个 <code>sw_reg_lane_ctrl</code> 位后，<code>digital_top.reg_lane_ctrl[4:0]</code> 按选择条件输出正确值。五个位分布在 <code>0x02[1:0]</code>（bit4、3）、<code>0x03[1:0]</code>（bit2、1）和 <code>0x04[0]</code>（bit0）；<code>0x33[7] reg_pin_eq</code> 选择软件值或 EQ 引脚预设。本 case 只判断数字控制输出，不以模拟均衡增益或图像数据作为通过条件。</p>
+<p>寄存器说明规定 <code>reg_pin_eq=1</code> 时使用软件值。当前参考 RTL 的优先级为 <code>AUTO_EQ_EN</code>、<code>reg_pin_eq | EQ_MODE</code>、EQ 引脚译码。现有 testbench 固定 <code>EQ=3&amp;#x27;b000</code>、<code>EQ_MODE=0</code>，因此选择 EQ 引脚时预期输出为 <code>5&amp;#x27;b00010</code>。<code>AUTO_EQ_EN</code> 来自 <code>AEQ</code> 引脚，而当前 TB 的 <code>.AEQ()</code> 未连接。case 在发帧前将 <code>chip_tb_top.u_HK1V11.AEQ</code> 固定为 0，使 <code>AUTO_EQ_EN=0</code>。</p>
+<h2>激励与期望</h2>
+<p>复用 <code>t_8b1lane</code> 基础发帧流程，以 8 帧配置覆盖 EQ 引脚基线、软件全0、五个位的 walking-one，以及 EQ 引脚选择时软件全1的覆盖场景。每帧固定 <code>CHIP_SEL=0</code>、单 lane、12 ports、活动区 3840×16、<code>PORSD=1</code>、<code>TEST_PRTCT=0x72</code>，并设置 <code>CTRLF_CHECKSUM=0101</code> 使 CTRL_F 配置帧通过 checksum 保护。</p>
+<table>
+<thead>
+<tr>
+<th>帧</th>
+<th style="text-align: right;"><code>reg_pin_eq</code></th>
+<th style="text-align: right;">五位软件值</th>
+<th style="text-align: right;"><code>reg_lane_ctrl[4:0]</code> 期望</th>
+<th>检查点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"><code>00000</code></td>
+<td style="text-align: right;"><code>00010</code></td>
+<td>EQ 引脚基线</td>
+</tr>
+<tr>
+<td>1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><code>00000</code></td>
+<td style="text-align: right;"><code>00000</code></td>
+<td>软件全0</td>
+</tr>
+<tr>
+<td>2–6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><code>00001</code> 至 <code>10000</code></td>
+<td style="text-align: right;">与软件值相同</td>
+<td>逐位 walking-one</td>
+</tr>
+<tr>
+<td>7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"><code>11111</code></td>
+<td style="text-align: right;"><code>00010</code></td>
+<td>EQ 引脚选择覆盖软件值</td>
+</tr>
+</tbody>
+</table>
+<p><code>cfg_frame8</code> 重复 frame7，作为结束保护配置。</p>
+<h2>Checker 与通过条件</h2>
+<p>每帧在 <code>VS_O</code> 上升沿后 1 ns 检查一次 <code>chip_tb_top.u_HK1V11.u_HK1V11_digital_top.u_LOGIC_CENTER.reg_lane_ctrl[4:0]</code>。checker 只用八个固定期望值和一次五位 <code>!==</code> 比较；失配报告帧号、实测值及期望值。采齐 8 帧且无失配即通过。期望值来自本计划的配置与 EQ 引脚选择，不从内部寄存器映射反读。</p>
+<p>通用数据 scoreboard 仅作为传输 smoke check。缺帧使用仿真总超时，不增加额外状态机或逐位 checker。</p>
+<h2>范围与状态</h2>
+<p>不检查寄存器回读、写入被拒绝、<code>0xA1[4]</code> 只读访问、模拟增益或自动均衡功能。<code>reg_pin_eq=0</code> 帧只检查输出选择，不判断软件位是否存储。</p>
+<p>case 已生成；尚未编译或运行 DUT 仿真，需在目标仿真中确认帧采样时刻和 AEQ force 层级。</p></main></body></html>

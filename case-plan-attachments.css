@@ -1,0 +1,25 @@
+.case-plan-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 24px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line, #dce4ed);
+  color: var(--ink, #172033);
+  font-size: 13px;
+}
+.case-plan-source {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--category-soft, #e5f4f2);
+  color: var(--category-deep, #17615d);
+  font-size: 11px;
+}
+.case-plan-links { display: flex; gap: 12px; margin-left: auto; }
+.case-plan-links a { color: var(--blue-deep, #075fa6); font-weight: 600; text-decoration: none; }
+.case-plan-links a:hover { text-decoration: underline; }
+@media (max-width: 640px) {
+  .case-plan-attachment { margin: 0 15px; }
+  .case-plan-links { margin-left: 0; width: 100%; }
+}

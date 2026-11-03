@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_PWRC_P_N · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_PWRC_P_N · 验证计划附件</h1>
+<p class="source">来源：1012 工程中的可读副本；20261027 副本的正文已损坏。此计划是历史资料，细节应以当前测试和规格为准。</p>
+<a class="button" href="hk1v11-t-8b1lane-pwrc-p-n.md" download="t_8b1lane_PWRC_P_N_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>PWRC_P / PWRC_N 验证计划</h1>
+<h2>验证目标</h2>
+<p>验证 <code>CHIP_SEL=1</code> 时，通过 CHPI 写入 <code>PWRC_P[1:0]</code>、<code>PWRC_N[1:0]</code> 后，C 时段的数字功率控制输出按配置变化，P/N 可以独立设置，且修改这两个字段不会改变 A/B 时段的控制码。</p>
+<p>最终检查点使用数字顶层的实际端口：</p>
+<pre><code class="language-text">chip_tb_top.u_HK1V11.u_HK1V11_digital_top.PWRC_SOP_P[2:0]
+chip_tb_top.u_HK1V11.u_HK1V11_digital_top.PWRC_SOP_N[2:0]
+</code></pre>
+<h2>寄存器与预期编码</h2>
+<ul>
+<li><code>PWRC_P[1:0]</code>：<code>CHIP_SEL=1</code> 的 <code>0x0A[5:4]</code>，C 时段 P 路设置。</li>
+<li><code>PWRC_N[1:0]</code>：<code>CHIP_SEL=1</code> 的 <code>0x0A[7:6]</code>，C 时段 N 路设置。</li>
+<li>依据当前 RTL 的两位到三位编码关系制定固定期望表。运行时不从内部寄存器或实际输出反算期望。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">写入配置</th>
+<th style="text-align: center;">期望三位控制码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>010</code></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>01</code></td>
+<td style="text-align: center;"><code>100</code></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>101</code></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>11</code></td>
+<td style="text-align: center;"><code>111</code></td>
+</tr>
+</tbody>
+</table>
+<p>当前 RTL 在 <code>0x0A</code> 尚未写入时使用 <code>10</code> 作为 P/N 默认配置。正式检查须在该地址写入生效后开始。</p>
+<h2>固定配置</h2>
+<ul>
+<li>采用现有正常 8-bit、单 lane、12 ports、3840×16、8 帧传输，<code>CHIP_SEL=1</code>、<code>PORSD=1</code>。</li>
+<li>设置 <code>TEST_PRTCT=0x72</code>，<code>CTRLF_CHECKSUM=0101</code>，关闭三帧校验保护等待。</li>
+<li>设置 <code>VPS_EN=00</code>，避免消隐省电覆盖；主功能检查选择 <code>R_BKDU=0</code> 的正常输出周期。</li>
+<li>固定 <code>PWRC_TA=01</code>、<code>PWRC_TB=01</code>、<code>PWRC_TSEL=0</code>，使 A/B/C 三段都可观察。该 case 检查各段控制码，不比较 A/B 的绝对持续时间。</li>
+<li>固定 <code>PWRC_PA=00</code>、<code>PWRC_NA=00</code>，所以 A 段期望为 <code>P=010、N=010</code>。</li>
+<li>固定 <code>PWRC_PB=01</code>、<code>PWRC_NB=01</code>，所以 B 段期望为 <code>P=100、N=100</code>。</li>
+<li>保持既有正常输出时序，确保一个完整周期包含 A、B、C；不为此增加异常长的水平消隐。</li>
+</ul>
+<h2>八帧激励</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">帧</th>
+<th style="text-align: center;"><code>PWRC_P</code></th>
+<th style="text-align: center;"><code>PWRC_N</code></th>
+<th style="text-align: center;">C 段 P 路期望</th>
+<th style="text-align: center;">C 段 N 路期望</th>
+<th>检查目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>010</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td>P 最低编码、首次写入生效</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: center;"><code>01</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>100</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td>P 第二档</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td>P 第三档</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;"><code>11</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>111</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td>P 第四档</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>00</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td style="text-align: center;"><code>010</code></td>
+<td>N 最低编码、P 恢复基线</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>01</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td style="text-align: center;"><code>100</code></td>
+<td>N 第二档</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td>N 第三档</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;"><code>10</code></td>
+<td style="text-align: center;"><code>11</code></td>
+<td style="text-align: center;"><code>101</code></td>
+<td style="text-align: center;"><code>111</code></td>
+<td>N 第四档</td>
+</tr>
+</tbody>
+</table>
+<p><code>cfg_frame0.txt</code> 至 <code>cfg_frame7.txt</code> 对应上表；<code>cfg_frame8.txt</code> 重复最后一组配置，供基础发送流程使用。</p>
+<p>帧 0～3 只遍历 P，N 应保持 <code>101</code>；帧 4～7 只遍历 N，P 应保持 <code>101</code>。全部帧的 A/B 段都应分别保持 <code>010/010</code>、<code>100/100</code>。C 段的 P/N 组合在这八帧中均不同于 A/B 组合，可识别错误的时段选择。</p>
+<h2>采样时机与精简 checker</h2>
+<ol>
+<li>以每组 CTRL_F 配置实际生效为界推进预期配置；不能仅凭 <code>VS_O</code> 帧计数盲目切换期望，因为 CTRL_F 可能在视频帧边界前到达。</li>
+<li>配置生效后，选取第一个完整处于正常输出区的 A→B→C 周期；若更新发生在周期中间，使用下一个完整周期。</li>
+<li>使用 ANCTL 的时段信号定位：<code>PWRC_TIME=01</code> 为 A、<code>10</code> 为 B、<code>00</code> 为 C。该信号只定位采样阶段，预期控制码来自固定配置表。</li>
+<li>在 ANCTL.CLK（连接 DCLK）上升沿保存沿前时段，等待 1ns 后比较两个 digital_top 端口。输出寄存器在该沿使用沿前时段；此采样避开 NBA 和当前 RTL 触发器延迟。配置监视先收到 0x0A、再收到同组 0x1F，才允许开始完整周期检查。</li>
+<li>A/B 段比较固定码，C 段比较当前组 P/N 的表内期望。失配报告配置组、时段、P/N 写入值、实际码和期望码。</li>
+</ol>
+<p>实现仅需一个配置组索引、四档编码表及 A/B/C 三次采样比较，可用一个小 task 复用 P/N 端口比较；不引入通用 scoreboard、复杂状态机或逐位 checker。</p>
+<h2>通过条件</h2>
+<ul>
+<li>八组配置均至少完成一个有效 A→B→C 周期，每个阶段都采到 P/N 两个端口。</li>
+<li>A/B/C 控制码全部正确，P/N 独立配置正确，A/B 输出不受 P/N 修改影响。</li>
+<li>不允许以跳过全部周期判通过。遇到配置更新、复位或 BKDU 打断的周期，重新选择完整周期；缺失阶段使用既有仿真总超时。</li>
+<li>发送结束且最后一组配置检查完成后退出，不依赖第九个视频帧。</li>
+</ul>
+<h2>信号路径与依据</h2>
+<pre><code class="language-text">CHPI 0x0A → LC_CPUWR.R_REG10_F
+          → LC_REG_MAPPING.PWRC_P/N
+          → 两位译码、A/B/C选择、DCLK寄存
+          → R_PWRCP_COP / R_PWRCN_COP
+          → LINK_CONFIG_CTRL → LINK_LOGIC → LOGIC_CENTER.BUFFER_O
+          → LOGIC_CENTER左侧COP输出
+          → digital_top.PWRC_SOP_P / PWRC_SOP_N
+</code></pre>
+<ul>
+<li>当前工程 <code>cmodel/test/HV2A31/HK1V11_digital_top/seperated_code/LC_REG_MAPPING.v</code>：261/262 行编码，318～340 行时段选择，350 行起 DCLK 寄存，400/401 行寄存器字段及写入标志选择。</li>
+<li>同目录 <code>LC_CPUWR.v</code>：1341 行起的 <code>0x0A</code> 写入；<code>BUFFER_O.v</code>：289～292 行直连分发。</li>
+<li>只读顶层参考 <code>C:/Users/xiapeng2/Desktop/HK1V11/HDL/TOP/HK1V11_digital_top.v</code>：406/407 行声明 <code>PWRC_SOP_N/P</code>，569～572 行将 LOGIC_CENTER 左侧输出连接到这两个端口。右侧 COP 端口在该封装中未连接。</li>
+<li>目标服务器实现前核对顶层版本和层级。<code>PWRCP/N_COP_DRA_L/R_O</code> 属于 LOGIC_CENTER，不能直接作为 digital_top 端口名使用。</li>
+</ul>
+<h2>实现文件与验证状态</h2>
+<p>已实现 test、精简 checker、9 份 cfg、编译入口和独立 Python 3.9 安装脚本。脚本包含完整文件内容，可在 DV 根目录或 tests 目录运行，也支持 --dv-top 指定目录。不生成 PPM 或 ctrl_l_line_cfg.txt；有基础 case pattern 时复用该目录。</p>
+<p>本地检查 Python 语法、安装结果及配置表；DUT 编译和仿真需在服务器执行。不覆盖 CHIP_SEL=0、VPS 消隐省电功能、checksum 保护功能或模拟电流/功耗数值。</p></main></body></html>
