@@ -19,6 +19,16 @@
       throw new Error("Plan manifest format is invalid");
     }
     const plans = new Map(manifest.attachments.map(item => [item.caseId, item]));
+    if (Array.isArray(manifest.unlinkedPlans) && manifest.unlinkedPlans.length) {
+      const registerLink = document.querySelector(".register-side-link");
+      if (registerLink && !document.querySelector(".case-plan-library-link")) {
+        const library = text("a", `待关联验证计划 · ${manifest.unlinkedPlans.length} 份`, "case-plan-library-link");
+        library.href = "plans/library.html";
+        library.target = "_blank";
+        library.rel = "noopener";
+        registerLink.after(library);
+      }
+    }
 
     function decorate() {
       for (const card of list.querySelectorAll(".case-card")) {

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_ACS_SKIP_11 · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_ACS_SKIP_11 · 验证计划附件</h1>
+<p class="source">来源：1012 工程的历史计划。当前报告尚无同名 Case 记录；细节应以当前测试和规格为准。</p>
+<a class="button" href="unlinked-t-8b1lane-acs-skip-11.md" download="t_8b1lane_ACS_SKIP_11_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>ACS_SKIP_11 验证计划：Level_Skip_frame=1、Skip_frame_count=1</h1>
+<h2>1. 范围与期望</h2>
+<p>验证寄存器0x27的组合 <code>ACS_EN=1</code>、<code>Level_Skip_frame=1</code>、<code>Skip_frame_count=1</code>，对应 <code>R_REG39_F=8&amp;#x27;h83</code>（bit[7]=ACS_EN、bit[1]=Level、bit[0]=Skip count）。按规格，满足ACS触发条件后连续跳过2帧；跳帧期间全部DRD像素输出Gray127。图像配置沿用 ACS_SKIP_00：CH_SEL=001、POLC=0、POL2=0，前六组POL=0，最后一组POL=1。</p>
+<p>沿用“一帧特殊输入+两帧Gray64观察输入”的结构；两张紧随触发场景的观察帧必须连续跳过并输出Gray127。跳帧后不另加恢复帧。每组三帧完成后在VFP期间通过CHPI/CTRL_F关闭ACS、确认计数清零，再为下一组重新使能。</p>
+<h2>2. 逐帧激励与期望</h2>
+<p>每个有效行检查本芯片接收的960个灰阶分量（320个RGB像素）。特殊帧第0行为Gray64，后续行复用 ACS_SKIP_00 的门槛图案；每组两个观察帧均为全Gray64。事件数指16行中满足规格分类的行间H2L/L2H跳变数。</p>
+<table>
+<thead>
+<tr>
+<th>帧</th>
+<th>场景/输入</th>
+<th style="text-align: right;">事件数</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Low0/High255，累计7次跳变后保持High255</td>
+<td style="text-align: right;">7/16</td>
+<td>不触发</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Gray64观察1</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，ACS_O=1、DRA_ACS_DATA=0，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Gray64观察2</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Low15/High127，累计9次跳变</td>
+<td style="text-align: right;">0/16</td>
+<td>High127不满足全高分类，不触发</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Gray64观察1</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Gray64观察2</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Low16/High128，累计9次跳变</td>
+<td style="text-align: right;">0/16</td>
+<td>Low16不满足全低分类，不触发</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Gray64观察1</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Gray64观察2</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Low15/High128，原有8次跳变；第2行像素100的G改127、第3行同像素G改16</td>
+<td style="text-align: right;">5/16</td>
+<td>两条无效行对应事件不计入，不触发</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Gray64观察1</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Gray64观察2</td>
+<td style="text-align: right;">0/16</td>
+<td>不跳帧，左右12路输出Gray64</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Low0/High255，精确8次跳变</td>
+<td style="text-align: right;">8/16</td>
+<td>达到50%门槛，触发</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Gray64观察1</td>
+<td style="text-align: right;">0/16</td>
+<td>必须跳帧1；ACS_O=0，门控有效时左右12路输出Gray127</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Gray64观察2</td>
+<td style="text-align: right;">0/16</td>
+<td>必须连续跳帧2；门控有效时左右12路输出Gray127</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Low15/High128，9次跳变</td>
+<td style="text-align: right;">9/16</td>
+<td>超过门槛，触发</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Gray64观察1</td>
+<td style="text-align: right;">0/16</td>
+<td>必须跳帧1，左右12路输出Gray127</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Gray64观察2</td>
+<td style="text-align: right;">0/16</td>
+<td>必须连续跳帧2，左右12路输出Gray127</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Low0/High255，8次跳变，POL=1</td>
+<td style="text-align: right;">8/16</td>
+<td>与POL=0场景一样触发</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Gray64观察1，POL=1</td>
+<td style="text-align: right;">0/16</td>
+<td>必须跳帧1，左右12路输出Gray127</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Gray64观察2，POL=1</td>
+<td style="text-align: right;">0/16</td>
+<td>必须连续跳帧2，左右12路输出Gray127</td>
+</tr>
+</tbody>
+</table>
+<p>未触发观察帧固定要求ACS_O=1、DRA_ACS_DATA=0和Gray64。触发后的两张观察帧都要检查ACS_O、DRA_ACS_DATA以及DBR0_O～DBR5_O、DBL0_O～DBL5_O。每张跳帧观察帧第0行允许门控0→1过渡：门控0期间输出Gray64，门控1期间输出Gray127；第1～15行要求门控持续为1且12路均输出Gray127。不得只凭ACS_O=0判定数据路径通过。POL=1场景还核对有效DRA_ACS_POL；极性映射不能改变跳帧和灰阶期望。</p>
+<h2>3. 帧数及复用方式</h2>
+<p>共21帧：七组×（一张特殊帧+两张观察帧）。<code>frame_num</code>/图像发送循环按21张图像设置；cfg_frame编号只是CHPI配置载荷编号，不代替图像帧数。覆盖7/16未达门槛、High127与Low16分类边界、单分量破坏、8/16精确触发、9/16超门槛、POL=1触发，并对所有触发组验证连续两帧。</p>
+<p>复用 ACS_SKIP_00 的七种特殊图案、Gray64帧、PPM解析/切片、逐行事件模型、CHPI发送、组间隔离和checker观测点。可沿用 ACS_SKIP_01 的21帧场景编排；将寄存器期望改为0x83，并把所有预期跳帧的输出值从Gray0改成Gray127。ACS_SKIP_00/01文件保持不变。</p>
+<h2>4. PPM与发送约定</h2>
+<ul>
+<li>PPM为P3、3840×2160、maxval 255，数据区每行一个RGB像素；保留完整2160行，环境直接使用顶部16行，不进行缩放。</li>
+<li>不由本计划生成PPM。实现时复用case 00图像生成逻辑，产出frame_0.ppm～frame_20.ppm；确认帧9的G分量注错位置处于本芯片实际发送切片。</li>
+<li>复用case私有TX sequence的训练、编码、CTRL_L、CTRL_F及普通CHPI配置流程，不修改共享环境或RTL。寄存器需在有效图像帧前完成配置并确认生效，避免在帧边界切换期望值。</li>
+</ul>
+<h2>5. 检查点与通过条件</h2>
+<ol>
+<li>每组生效配置为R_REG39_F=8&#x27;h83，ACS_EN=1、Level_Skip_frame=1、Skip_frame_count=1；组间关闭时确认ACS_EN=0、ACS_CNT清零。</li>
+<li>每帧完整采集16行；每行比较320个24-bit输入像素，并核对高/低行标志、H2L/L2H事件及表中总数。注错帧确认两条破坏行不满足全行分类。</li>
+<li>在特殊帧K4/CTRL_F之后核对门槛判定；非触发组不得跳帧，精确8/16、9/16和POL=1的8/16必须触发。</li>
+<li>触发场景后的两张观察帧都必须连续跳帧并覆盖为Gray127；逐行检查ACS_O、DRA_ACS_DATA及左右12路输出。首行按门控相关判据检查Gray64/Gray127切换，第1～15行必须持续门控并输出Gray127。</li>
+<li>完整性要求21帧、336条有效行、322,560个输入灰阶分量；每个观察帧左右12路均须有有效采样。最后一帧后只关闭ACS并检查状态，不等待额外图像恢复帧。</li>
+</ol>
+<h2>6. 规格来源与状态</h2>
+<p>规格依据 <code>HK1V11_IP_Spec_SD_GAMMA_20261021.xlsx</code> 的Reg页字段定义、Data_SD页ACS组合表及跳帧数据覆盖说明。数据场景/检查结构参考 <code>tests/t_8b1lane_ACS_SKIP_00</code>，帧编排参考 <code>tests/t_8b1lane_ACS_SKIP_01</code>。此文件只定义验证计划：尚未编写SV、生成PPM、编译或运行DUT仿真；以规格定义的连续2帧Gray127作为黄金期望。</p></main></body></html>

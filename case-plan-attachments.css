@@ -9,6 +9,19 @@
   color: var(--ink, #172033);
   font-size: 13px;
 }
+.case-plan-library-link {
+  display: block;
+  margin: 8px 0 10px;
+  padding: 8px 12px;
+  border: 1px solid #aacdc9;
+  border-radius: 6px;
+  background: #f0faf8;
+  color: #17615d;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.case-plan-library-link:hover { background: #e5f4f2; }
 .case-plan-source {
   padding: 2px 7px;
   border-radius: 999px;

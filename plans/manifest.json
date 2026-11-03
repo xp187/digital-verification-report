@@ -241,5 +241,47 @@
       "sha256": "f29e001b928646f50447afcf6e68d5eda694373bea2730e54dccbda879a5e179",
       "bytes": 2482
     }
+  ],
+  "unlinkedPlans": [
+    {
+      "caseId": "unlinked-t-8b1lane-acs-skip-01",
+      "name": "t_8b1lane_ACS_SKIP_01",
+      "category": "unlinked_current",
+      "source": "HK1V11_top_20261027",
+      "sha256": "a07ddc7112acfe1a6dababc9659c1372a913807d94f1af1dc7b4fd3eabdbea4b",
+      "bytes": 7829
+    },
+    {
+      "caseId": "unlinked-t-8b1lane-acs-skip-10",
+      "name": "t_8b1lane_ACS_SKIP_10",
+      "category": "unlinked_historical",
+      "source": "HK1V11_top_1012",
+      "sha256": "2ea942b52edbcf4443d91ad716f12dffe4e6091f234198c7192de67457f8a8bb",
+      "bytes": 4948
+    },
+    {
+      "caseId": "unlinked-t-8b1lane-acs-skip-11",
+      "name": "t_8b1lane_ACS_SKIP_11",
+      "category": "unlinked_historical",
+      "source": "HK1V11_top_1012",
+      "sha256": "2c01cc5024500cd5a39c81391c767c33f1ad6900a364d5cd9996a253e31c524f",
+      "bytes": 5900
+    },
+    {
+      "caseId": "unlinked-t-8b1lane-hiz-sel0",
+      "name": "t_8b1lane_HIZ_SEL0",
+      "category": "unlinked_historical",
+      "source": "HK1V11_top_1012",
+      "sha256": "bc663a8d32ec1a427ace1280377f900eb44a8f9105c7353b69e5d73f8e55e0eb",
+      "bytes": 3842
+    },
+    {
+      "caseId": "unlinked-t-8b1lane-khead-20b-sel",
+      "name": "t_8b1lane_KHEAD_20B_SEL",
+      "category": "unlinked_current",
+      "source": "HK1V11_top_20261027",
+      "sha256": "2b256c5dec887c2b7281c60d31a25f7bb20748dd4eda05c32af9a461ac52461b",
+      "bytes": 4674
+    }
   ]
 }

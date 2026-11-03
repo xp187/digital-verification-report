@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_KHEAD_20B_SEL · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_KHEAD_20B_SEL · 验证计划附件</h1>
+<p class="source">来源：20261027 工程。当前报告尚无同名 Case 记录；此附件不代表已通过验证。</p>
+<a class="button" href="unlinked-t-8b1lane-khead-20b-sel.md" download="t_8b1lane_KHEAD_20B_SEL_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>khead_20b_sel 验证计划</h1>
+<h2>1. 验证目标</h2>
+<p>验证新增寄存器字段 <code>khead_20b_sel[4:0]</code> 配置为 <code>5&amp;#x27;b10101</code> 后，设计实际采用 20-bit K-head 模式，并在连续 8 帧中持续生效。像素、SIM_OUT、K-head 解码内容等数据正确性由环境已有 checker 检查；本 case 的专用 checker 只确认寄存器对应的有效模式选择信号。</p>
+<h2>2. 规格与配置</h2>
+<ul>
+<li>规格来源：<code>E:\projects\HK1V11\HK1V11_spec\05.Register\HK1V11_Register_20261102.xlsm</code></li>
+<li>寄存器地址：<code>0x33</code></li>
+<li>字段位置：<code>[6:2] khead_20b_sel[4:0]</code></li>
+<li>规格编码：<code>5&amp;#x27;b10101</code> 选择 20-bit 模式；其他编码选择 40-bit 模式（默认）。</li>
+<li>本 case 只使用 <code>5&amp;#x27;b10101</code>，不遍历其他字段编码、不切换模式。测试配置在 <code>build_phase</code> 中设置一次；标准 420b 序列会在每帧 CTRL_F 中携带相同的固定值。</li>
+<li>如果寄存器其他位 <code>[7]</code>、<code>[1]</code>、<code>[0]</code> 保持 0，打包后的整字节值为 <code>8&amp;#x27;h54</code>。实际配置应通过项目的正常寄存器写入流程只更新 <code>[6:2]</code>，保留相邻字段的既有配置；不能因写整字节而意外修改这些位。</li>
+<li>CHIP_SEL 沿用该环境现有 case 的固定基线配置，8 帧中不切换 CHIP_SEL。</li>
+</ul>
+<h2>3. 用例流程</h2>
+<ol>
+<li>按环境既有流程完成复位和基础初始化，并设置固定 CHIP_SEL。</li>
+<li>在第 0 帧开始前，通过正常寄存器配置路径将 <code>0x33[6:2]</code> 设为 <code>5&amp;#x27;b10101</code>。该字段在整个用例中保持固定，不做模式切换；<code>cfg_frame0.txt</code> 至 <code>cfg_frame8.txt</code> 均携带相同值，以匹配环境每帧发送 CTRL_F 配置、并覆盖末帧后续配置行的流程。</li>
+<li>等待项目既有的配置生效/提交时序完成；不使用 force，也不通过层级赋值绕过寄存器路径。</li>
+<li>按原有正常帧间隔连续运行 8 个完整帧，编号为 frame 0 至 frame 7。保持环境默认的帧节奏，不压缩帧间隔，不额外插入模式切换或寄存器写操作。</li>
+<li>每帧在 K-head 模式选择已稳定、且该帧首次处理 K-head 的有效观察点采样一次有效模式选择信号，并记录帧号、期望模式和实际模式。</li>
+<li>由环境现有 checker 继续检查输入/输出数据；本 case 的 checker 不重复检查像素值、SIM_OUT 或解码数据。</li>
+</ol>
+<h2>4. 专用 checker 检查点</h2>
+<h3>观察对象</h3>
+<p>观察 RTL 映射后的 <code>chip_tb_top.u_HK1V11.u_HK1V11_digital_top.u_LOGIC_CENTER.LINK_LOGIC.LINK_CONFIG_CTRL.LC_REG_MAPPING.khead_20b_sel[4:0]</code>。规格中 <code>5&amp;#x27;b10101</code> 表示 20-bit K-head 模式，因此每帧首条活动行采样时该映射字段应为 <code>5&amp;#x27;b10101</code>。</p>
+<h3>每帧期望</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">帧号</th>
+<th>寄存器字段</th>
+<th>期望有效模式</th>
+<th>检查时机</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>配置生效后，本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td><code>5&amp;#x27;b10101</code></td>
+<td>20-bit K-head</td>
+<td>本帧首次处理 K-head 时</td>
+</tr>
+</tbody>
+</table>
+<p>Checker 直接比较映射后的字段值；字段为 X/Z 或任一帧不是 <code>5&amp;#x27;b10101</code> 时，报告带帧号的错误。像素、SIM_OUT 和解码数据继续交由环境 checker 检查。</p>
+<h3>Checker 不负责的项目</h3>
+<ul>
+<li>不比较任何像素、SIM_OUT、输出字节或 K-head 解码数据。</li>
+<li>不重复检查寄存器读回正确性；寄存器访问和数据正确性由环境已有机制负责。</li>
+<li>不检查 <code>5&amp;#x27;b10101</code> 以外的字段编码，不检查复位值，也不遍历 CHIP_SEL。</li>
+<li>不改写环境 checker 的阈值、使能或判定逻辑。</li>
+</ul>
+<h2>5. 通过与失败判据</h2>
+<p><strong>PASS：</strong> 字段在 frame 0 前按正常路径配置一次；8 个完整帧均到达有效检查点；每帧观察到的有效选择均为 20-bit；本 checker 无错误，环境既有 checker 也无错误。</p>
+<p><strong>FAIL：</strong> 配置后任一帧的有效选择不是 20-bit、控制信号未知、帧内没有可用的 K-head 观察点，或用例未能按正常时序完成 8 帧。日志应包含 case 名、帧号、字段配置值及实际有效模式，便于定位。</p>
+<h2>6. 实施约定</h2>
+<ul>
+<li>case 设置 <code>env_cfg.khead_20b_sel=5&amp;#x27;b10101</code>，通过环境正常 CTRL_F 配置路径驱动 RTL，不使用 force 或层级写寄存器。</li>
+<li>序列在每帧 row 0 的 K-head 输入前检查映射字段；完整结束后确认恰好检查 8 帧。</li>
+<li>安装脚本不生成或复制 PPM 文件；运行时沿用仿真环境提供的标准输入图像。</li>
+</ul></main></body></html>
