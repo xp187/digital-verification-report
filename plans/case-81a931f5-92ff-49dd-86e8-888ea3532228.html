@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>t_8b1lane_SCS_PKT_HALF · Verification plan</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:960px;margin:0 auto;padding:28px 22px 80px;line-height:1.65;color:#172033;background:#f6f8fb}
+header{background:#e5f4f2;border:1px solid #aacdc9;border-radius:12px;padding:18px 22px;margin-bottom:20px}
+h1{font-size:1.3rem;margin:0 0 6px}.source{color:#475569;font-size:.88rem;margin:0 0 12px}
+a.button{display:inline-block;background:#17615d;color:white;text-decoration:none;padding:6px 12px;border-radius:6px}
+main{background:white;border:1px solid #dce4ed;border-radius:12px;padding:18px 26px;overflow-wrap:anywhere}
+main h1,main h2,main h3{color:#075fa6;line-height:1.35}pre{overflow:auto;background:#edf2f7;padding:12px;border-radius:6px}
+code{font-family:Consolas,monospace}table{border-collapse:collapse;display:block;overflow:auto}th,td{border:1px solid #cbd5e1;padding:5px 9px;text-align:left}
+@media(max-width:640px){body{padding:12px}main{padding:14px}}
+</style></head><body><header><h1>t_8b1lane_SCS_PKT_HALF · 验证计划附件</h1>
+<p class="source">来源：20261027 工程中的原始计划。</p>
+<a class="button" href="case-81a931f5-92ff-49dd-86e8-888ea3532228.md" download="t_8b1lane_SCS_PKT_HALF_VERIFICATION_PLAN.md">下载原始 Markdown</a>
+</header><main><h1>SCS_PKT_HALF 寄存器验证计划</h1>
+<h2>1. 验证目标和范围</h2>
+<p>新建独立 case <code>t_8b1lane_SCS_PKT_HALF</code>，以 8 个有效图像帧验证 <code>0x2F[0] SCS_PKT_HALF</code> 的 0、1 两种取值：在 <code>SMART_CS=0111/1111</code> 时，检查 SMART_CS 电荷分享脉冲的持续 packet 数是否按规格减半；选 <code>SMART_CS=0000/1110</code> 作为关闭编码代表，检查两种 HALF 值下均不产生 SMART_CS 脉冲。</p>
+<p>不遍历全部其他 SMART_CS 编码，不扩展 CHIP_SEL、其他寄存器、复位、读回、阈值或异常协议等独立功能场景。正常启动和保护配置仅作为前提，现有环境的数据检查按原流程运行。</p>
+<h2>2. 规格依据和参数</h2>
+<ul>
+<li>规格：<code>E:\projects\HK1V11\HK1V11_spec\05.Register\HK1V11_Register_20261102.xlsm</code>，<code>Reg_description_F_CHIP_SEL=0/1</code> 的 <code>0x2F[0]</code>；<code>history</code> 的 2026-10-21 更新同时记录 SMART_CS 的基础 on-time。寄存器文本平面导出位于该目录 <code>RegisterTxtExporter\HK1V11_Register_20261102_flat_20261103_1038.txt</code>。</li>
+<li><code>SCS_PKT_HALF</code> 为 1 bit，R/W、默认 0；0 保持基础 packet 数，1 减半。该用例固定沿用已有 SMART_CS case 的 CHIP_SEL 与链路配置。</li>
+<li><code>SMART_CS=0111</code> 的基础 on-time 为 256 packet，<code>1111</code> 为 128 packet；其他编码关闭 SMART_CS。每个 DCLK 上升沿按已有 checker 的约定计 2 packet。</li>
+<li>沿用已跑通的 SMART_CS 基础配置：正常复位/lock、<code>PORSD=1</code>、<code>CH_SEL=1</code>、<code>TEST_PRTCT=8&amp;#x27;h72</code>、正常帧时序及黑白逐行交替图案；其余配置保持基线，不为本功能另行遍历。按既有环境对帧配置计算或更新 checksum，防止目标配置被丢弃。</li>
+<li>采用 packet 模式：实施前确认服务器编译没有定义 <code>ABSOLUTE_TIME</code>；若该宏生效，相关 RTL 走另一分支，不可据此宣称本 case 覆盖了 HALF 功能。</li>
+</ul>
+<h2>3. 八帧配置和期望</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">有效帧</th>
+<th style="text-align: center;">SMART_CS</th>
+<th style="text-align: center;">SCS_PKT_HALF</th>
+<th style="text-align: left;">预期完整 DRA_CS 脉冲</th>
+<th style="text-align: right;">等效 DCLK 上升沿</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;">0111</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: left;">256 packet</td>
+<td style="text-align: right;">128</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: center;">0111</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">128 packet</td>
+<td style="text-align: right;">64</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">1111</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: left;">128 packet</td>
+<td style="text-align: right;">64</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;">1111</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">64 packet</td>
+<td style="text-align: right;">32</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0000</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: left;">SMART_CS 不触发；0 个有效脉冲</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;">0000</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">SMART_CS 不触发；0 个有效脉冲</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;">1110</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: left;">SMART_CS 不触发；0 个有效脉冲</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;">1110</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;">SMART_CS 不触发；0 个有效脉冲</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table>
+<p>每帧使用相同的 3840×16 黑白交替图案和正常帧间隔。帧号指实际配置稳定后的有效观察帧；启动、寄存器提交及图像 pipeline 如需预备帧，由环境正常启动处理，不把预备帧当作上述 8 帧的通过记录。<code>0000/1110</code> 仅代表两种关闭编码，不声称覆盖所有 14 个关闭编码。</p>
+<h2>4. 刺激与帧配置</h2>
+<ol>
+<li>沿用已有 <code>t_8b1lane_SMART_CS_value</code> 的正常初始化、保护解锁和输出激励，不 force DUT 内部字段或脉冲。</li>
+<li>经正常 CTRL_F 配置路径为每个有效帧设置上表两项；基线的其他字段保持项目原值。跟踪配置何时被接收并实际生效，记录 cfg 帧号、图像帧号和有效值的对应关系。</li>
+<li>每帧完整发送相同输入图案。不要使用配置生效前、启动阶段或跨帧不完整的脉冲来满足覆盖计数。</li>
+<li>运行 8 个有效帧后确认 case 结束；为末帧准备必要的结束/后续配置但不新增覆盖场景。</li>
+</ol>
+<h3>实施前提：帧配置路径当前缺少该字段</h3>
+<p>指定工程当前 <code>agents/isprx_env/env_cfg.sv</code> 的 <code>0x2F</code> 组包仍将 bit 0 设置为 <code>reserved[0]</code>，且字段表/配置分派中未发现 <code>SCS_PKT_HALF</code>。因此仅在 <code>cfg_frame*.txt</code> 里新增字段并不能保证 <code>0x2F[0]</code> 被送出。</p>
+<p>后续实现应选择最小且可验证的正常配置方案：优先补齐环境字段、帧配置分派和 <code>0x2F[0]</code> 组包，默认保持 0 并保留 <code>[7:1]</code> 现有行为；如果项目已有可用的 case 局部配置通道，也可采用等效方案，但必须证明后续 CTRL_F 不会把 I2C 写入覆盖。需要核查送出的完整 0x2F 字节和 checksum，而不是只观察 cfg 文本。本计划阶段不修改环境代码。</p>
+<h2>5. 专用 checker</h2>
+<p>参照 <code>tests/t_8b1lane_SMART_CS_value/smart_cs_checker.sv</code> 的 DRA_CS、DCLK 和 BKDU 观察方式，但本 case 建立<strong>独立文件</strong>，不与已有 checker 建硬链接或改动已通过 case。</p>
+<h3>配置观察</h3>
+<ul>
+<li>每个有效帧检查实际生效的 <code>SMART_CS</code> 与 <code>R_SCS_PKT_HALF</code> 均等于该帧计划值，且值已知。<code>TEST_PRTCT</code> 的 <code>0x72</code> 仅为基础配置，不新增保护功能测试。</li>
+<li>期望 packet 数必须从上表或 <code>cfg_frame</code> 的计划配置推导，不能用 DUT 的实际 HALF 值推导期望；配置不一致单独报错。</li>
+</ul>
+<h3>脉冲测量</h3>
+<ul>
+<li>在 <code>BKDU=0</code> 的稳定有效区观察 <code>DRA_CS</code>。沿用已通过 case 的信号极性和每个 DCLK 上升沿累计 2 packet 的方式；以 <code>DRA_CS</code> 完整高脉冲为单位，记录起止时间、配置及 packet 数。</li>
+<li>使能帧逐个比较每个符合观察条件的完整脉冲：分别期望 256、128、128、64 packet；每帧必须至少有 1 个完整有效脉冲，否则报告覆盖不足，不可静默通过。</li>
+<li>关闭帧在基础配置排除其他 DRA_CS 来源的条件下，要求稳定有效区中没有 DRA_CS 脉冲；发现脉冲则报告时间、帧号和实际配置。进入 V-blank 的非 SMART_CS 脉冲沿用既有 case 的 BKDU 门控，不计入有效区。</li>
+<li>帧交接时分别观察脉冲开始和结束的有效配置。仅当确有配置切换或脉冲跨越观察窗口、无法归属某一帧时，按既有交接处理记录该脉冲；不得把整帧、整段帧尾或稳定区域的错误脉冲无条件忽略。切换前后各帧仍需满足各自检查及覆盖要求。</li>
+<li>逐帧输出期望/实际 SMART_CS、HALF、完整脉冲数及各脉冲 packet 数；计数不符、有效配置不符、信号 X/Z、应有脉冲而没有或关闭帧出现脉冲均报告错误。</li>
+</ul>
+<h2>6. 通过判据</h2>
+<ul>
+<li>8 个有效帧均到达检查点，配置与上表一致；四个使能帧各至少观测到 1 个完整有效脉冲。</li>
+<li>使能帧所有纳入检查的脉冲分别满足 256/128/128/64 packet；四个关闭帧稳定有效区内无 SMART_CS 脉冲。</li>
+<li>不存在未解释的配置切换、计数错误或 X/Z；环境既有 checker 无错误。记录帧交接时被排除的脉冲及原因。</li>
+</ul>
+<h2>7. 实施与仿真状态</h2>
+<p>已实现 <code>t_8b1lane_SCS_PKT_HALF</code> 测试、独立 packet checker、9 个 CTRL_F 配置文件（cfg_frame0..8）和 8 张 3840×16 黑白交替 PPM 输入图；回归列表已登记一次。为使该用例通过正常 CTRL_F 路径驱动目标位，将 <code>register_config.txt</code> 的 0x2F[0] 定义为 <code>SCS_PKT_HALF</code>，并使用 <code>update_env_cfg.py</code> 生成 <code>env_cfg.sv</code> 的字段声明、配置解析、0x2F 打包和赋值分支。既有 SMART_CS checker 与 RTL 未修改。</p>
+<p>已完成 Python 语法和配置/映射静态核对；未运行 VCS 编译或 UVM 仿真。实际帧切换时点、packet 计数及服务器是否定义 <code>ABSOLUTE_TIME</code> 仍需在工程环境确认；若定义该宏，本 checker 会以 fatal 阻止将仿真误判为 packet 模式覆盖。</p></main></body></html>

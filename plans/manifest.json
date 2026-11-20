@@ -240,33 +240,321 @@
       "source": "HK1V11_top_1012",
       "sha256": "f29e001b928646f50447afcf6e68d5eda694373bea2730e54dccbda879a5e179",
       "bytes": 2482
-    }
-  ],
-  "unlinkedPlans": [
+    },
     {
-      "caseId": "unlinked-t-8b1lane-acs-skip-01",
+      "caseId": "case-81a931f5-92ff-49dd-86e8-888ea3532228",
+      "name": "t_8b1lane_SCS_PKT_HALF",
+      "category": "current",
+      "source": "HK1V11_top_20261027",
+      "sha256": "f6c34d6e579c24904609f972b585a466e5a590fed6c2f81a1e666cbf52bac1be",
+      "bytes": 7189
+    },
+    {
+      "caseId": "case-365f59ba-63e2-4b64-8154-34e6f2807b3e",
       "name": "t_8b1lane_ACS_SKIP_01",
-      "category": "unlinked_current",
+      "category": "current",
       "source": "HK1V11_top_20261027",
       "sha256": "a07ddc7112acfe1a6dababc9659c1372a913807d94f1af1dc7b4fd3eabdbea4b",
       "bytes": 7829
     },
     {
-      "caseId": "unlinked-t-8b1lane-acs-skip-10",
+      "caseId": "case-99b0926c-4f59-4285-89db-ba07648e2810",
       "name": "t_8b1lane_ACS_SKIP_10",
-      "category": "unlinked_historical",
-      "source": "HK1V11_top_1012",
-      "sha256": "2ea942b52edbcf4443d91ad716f12dffe4e6091f234198c7192de67457f8a8bb",
-      "bytes": 4948
+      "category": "current",
+      "source": "HK1V11_top_20261027",
+      "sha256": "0331b2e873ab6b3441739e1b146bb3464b0fc5d060c927c7e3dc37697f8375ba",
+      "bytes": 4802
     },
     {
-      "caseId": "unlinked-t-8b1lane-acs-skip-11",
+      "caseId": "case-fc45471d-981d-4415-aff4-b2af469994a1",
       "name": "t_8b1lane_ACS_SKIP_11",
-      "category": "unlinked_historical",
-      "source": "HK1V11_top_1012",
-      "sha256": "2c01cc5024500cd5a39c81391c767c33f1ad6900a364d5cd9996a253e31c524f",
-      "bytes": 5900
+      "category": "current",
+      "source": "HK1V11_top_20261027",
+      "sha256": "10c1168fc81ff746190ba4cad14cedceb7d9bef21d472169878fb3f2439a2235",
+      "bytes": 5742
     },
+    {
+      "caseId": "hk1v11-t-8b1lane-ch-hiz",
+      "name": "t_8b1lane_CH_HIZ",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "377ce8d8bfd0fd81ed73a840cfcac83651f80fd5d0cbc0ae59be5c6aaf9ec99c",
+      "bytes": 4054
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-dbc",
+      "name": "t_8b1lane_DBC",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "58f382908b08e46a499ef4181ad50acdbe5a6aa173fee05982d757330cb785af",
+      "bytes": 3793
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-direct-out",
+      "name": "t_8b1lane_DIRECT_OUT",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "c195eb630172b2884bd26947e34d7ad1052fe5624a0b0804ae5e9d6eeaba94f7",
+      "bytes": 8479
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-lenb-shift0",
+      "name": "t_8b1lane_LENB_SHIFT0",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "0c5891083304a26d257909bc3591b86859f3d4402640d348450fbd936c9f6a20",
+      "bytes": 3710
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-r-dbc-width-opt",
+      "name": "t_8b1lane_R_DBC_WIDTH_OPT",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "9af3f5e517e3b2dc8ab1d35134d2582de7173704fe0bdeab2aff6f1ce004ff6b",
+      "bytes": 3854
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-smart-cs-chsel",
+      "name": "t_8b1lane_SMART_CS_chsel",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "0f82c6e2445c9e85ca0a377240d0ffb5262e99a25930d9a2d20a4659bb779fd0",
+      "bytes": 4779
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-smart-cs-threshold",
+      "name": "t_8b1lane_SMART_CS_threshold",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "54477081dc37450127ebc44d5e105481e60dda10a2fd097898c6b023b1d9e901",
+      "bytes": 4836
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-smart-cs-value",
+      "name": "t_8b1lane_SMART_CS_value",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "f76fc931f062b789f786cc9b918a0c21677a98196347fb8e5f7bb3c42d7a58b7",
+      "bytes": 4985
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-sr-chip-sel0",
+      "name": "t_8b1lane_SR_chip_sel0",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "763fe8ddf623f7877605445bca45fe40c10e71664afcb27e4bf43f6750fa521b",
+      "bytes": 5443
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-sr-chip-sel1",
+      "name": "t_8b1lane_SR_chip_sel1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "7cdd0c91e0c226b1eedd98383d496807ae95466a34289d0e322bcdea08d2d664",
+      "bytes": 5703
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-tp10",
+      "name": "t_8b1lane_TP10",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "c940ab8b84418119c9c43f100760de42314dc72a2340485d97d80dd528b45899",
+      "bytes": 3991
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-tp10-sd-chop1",
+      "name": "t_8b1lane_TP10_SD_CHOP1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "a0bcdb6ab6f01192e5b543b093b314d0a2804dcd1f2d636e749dce374650aae2",
+      "bytes": 4057
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-tp11",
+      "name": "t_8b1lane_TP11",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "7d657e452db35b62383f373db6aa2636ae980a0afab39bba6854a17afb7e4c88",
+      "bytes": 3869
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-tp11-sd-chop-f2-sd-chop5",
+      "name": "t_8b1lane_TP11_SD_CHOP_F2_SD_CHOP5",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "a7eba3520a756c3beb10e62f9fdbac9f4deda5f74d9634398459e3003fb71649",
+      "bytes": 4281
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-tp-disable",
+      "name": "t_8b1lane_TP_disable",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "b318e8d7e4c44e0a94a8c12b3f352e3c2b094e739dbc4c78a895c9758378b28b",
+      "bytes": 4135
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-vbk-en0",
+      "name": "t_8b1lane_VBK_EN0",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "a3a6b5b0bc392a29857def846bc82e28bee987b09824a46e249feaf61c969c4a",
+      "bytes": 4388
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-vbk-en1",
+      "name": "t_8b1lane_VBK_EN1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "92856cd0da5b4830cc34486846e6bb5c7a479028cc1b4e01d1aec52179a52ed2",
+      "bytes": 4604
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-vps-en01",
+      "name": "t_8b1lane_VPS_EN01",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "910fd8b976a754542ca4640ae10a9c8073f78943594fda6980f66893e9cef1ab",
+      "bytes": 4584
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-vps-en10",
+      "name": "t_8b1lane_VPS_EN10",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "aa4b9251998b1ae180728b6561a24711b1ca86c852c8c45391c15cb67550a520",
+      "bytes": 4407
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-mask6pix0-k1",
+      "name": "t_8b1lane_mask6pix0_k1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "db686bd26a474b9146796174cfadecfc534d5afeb0facbec1ae4f996b192ea33",
+      "bytes": 3840
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-mask6pix0-utc",
+      "name": "t_8b1lane_mask6pix0_utc",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "25e87a97b44999c40b2e0b648f0163392f4a8f057adda8661828d1596044e69d",
+      "bytes": 3792
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-mask6pix1-k1",
+      "name": "t_8b1lane_mask6pix1_k1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "dd4e952076c1432a16ba285f6d04023a6051a03b979852edc56fc2804984eef0",
+      "bytes": 3831
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-mask6pix1-utc",
+      "name": "t_8b1lane_mask6pix1_utc",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "f6ded17e17ae6761c807480410b57d3b381f70eab6c7f1e203770cc9b5b88374",
+      "bytes": 3807
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-multi4-bcc",
+      "name": "t_8b1lane_multi4_bcc",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "c6a9e9de445d81c0e1551a00518292cb5805ee838426644c3d69a8d235668676",
+      "bytes": 5769
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-pwrc-load",
+      "name": "t_8b1lane_pwrc_load",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "3fbf0cbbfe466dfcc127a1f38f5fb65f01781eeed5378f40dc5893b09d332df3",
+      "bytes": 4231
+    },
+    {
+      "caseId": "hk1v11-t-8b1lane-pwrc-pn",
+      "name": "t_8b1lane_pwrc_pn",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "62aa6a0cdfc63fbe60952d4488cb9cbb9fc8518f231f11f1ebc3be5f2cb60a7e",
+      "bytes": 4903
+    },
+    {
+      "caseId": "hk1v11-t-h1920-v16-fps280-dplc-mode1",
+      "name": "t_H1920_V16_FPS280_PORT_NUM12_DPLC_MODE1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "5fa246192b8fdef408cb8bb6dfa9f0aa63d55eb33b29440c3e2c38c895d7c658",
+      "bytes": 3836
+    },
+    {
+      "caseId": "hk1v11-t-h1920-v16-fps280-ave-mode1-last0-rgbw7",
+      "name": "t_H1920_V16_FPS280_PORT_NUM12_DPLC_MODE1_AVE_MODE1_AVE_LAST0_AVE_RGBW1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "2a9d2933bdb5634b35a46dbce32ad78caca56f0378e08703cd028d11615965e6",
+      "bytes": 4045
+    },
+    {
+      "caseId": "hk1v11-t-h1920-v16-fps280-ave-mode1-last1-rgbw7",
+      "name": "t_H1920_V16_FPS280_PORT_NUM12_DPLC_MODE1_AVE_MODE1_AVE_LAST1_AVE_RGBW7",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "7df8415a45eb1cc06c5c418baa3af3c8d6fa03af5bc00b82760288913639cb4b",
+      "bytes": 3927
+    },
+    {
+      "caseId": "hk1v11-t-h1920-v16-fps280-dplc-group1",
+      "name": "t_H1920_V16_FPS280_PORT_NUM12_DPLC_MODE1_DPLC_GROUP1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "fee01c3d2eca7d2e27ae6b3cbf553723d3d506739575b6750f419b2ffd186318",
+      "bytes": 3831
+    },
+    {
+      "caseId": "hk1v11-t-h2880-v16-fps165-ch-sel3-sdc0",
+      "name": "t_H2880_V16_FPS165_CH_SEL3_SDC0",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "5dde18415b00e47cc2fd532ca78f31c94bcdfb0000b41a440f7ae2b076c51189",
+      "bytes": 3737
+    },
+    {
+      "caseId": "hk1v11-t-h3840-v16-fps120-ch-sel0",
+      "name": "t_H3840_V16_FPS120_CH_SEL0",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "c962ee85665ba464d0786d2fa71a593c3c8a36bb3142efa3d50ae352a5501cd7",
+      "bytes": 3737
+    },
+    {
+      "caseId": "hk1v11-t-h3840-v16-fps120-h4inv0-pol21-polc1",
+      "name": "t_H3840_V16_FPS120_CH_SEL0_SDC0_H4INV0_POL21_POLC1",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "add2ed2eff405268e7c210a7157ff11b2115f34896047cccba6e8964df7f712c",
+      "bytes": 4147
+    },
+    {
+      "caseId": "hk1v11-t-h3840-v16-fps120-scren1-random",
+      "name": "t_H3840_V16_FPS120_SCREN1_RANDOM",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "da63c3c1cd57dc6fb935e94a421ff2e5e0f571325a64102b92b2204da7e1b007",
+      "bytes": 3826
+    },
+    {
+      "caseId": "hk1v11-t-h3840-v16-fps120-scren1-tcon",
+      "name": "t_H3840_V16_FPS120_SCREN1_TCON",
+      "category": "current",
+      "source": "HK1V11_top_20261027 + HK1V11_Register_20261102",
+      "sha256": "55ef3e1f77d90ad9a0a0a695c5b4de3e5d556f90a140f971a954fcb1fc1cef1a",
+      "bytes": 3852
+    }
+  ],
+  "unlinkedPlans": [
     {
       "caseId": "unlinked-t-8b1lane-hiz-sel0",
       "name": "t_8b1lane_HIZ_SEL0",
